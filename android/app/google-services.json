@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "713509545032",
+    "project_id": "goodsmate-94866",
+    "storage_bucket": "goodsmate-94866.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:713509545032:android:b3508e70fe0b62a6b8a47d",
+        "android_client_info": {
+          "package_name": "com.example.anigoods"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "713509545032-lhb3rook4klok04ug81tbpld2bu28paq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBV6wxCpzCJBecaExcIBK0o23nTvgQEEUA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "713509545032-lhb3rook4klok04ug81tbpld2bu28paq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

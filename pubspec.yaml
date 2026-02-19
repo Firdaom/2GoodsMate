@@ -1,0 +1,73 @@
+name: anigoods
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  google_fonts: ^6.1.0 
+
+  # UI
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  
+  # Navigation
+  go_router: ^14.2.7
+  
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.4
+  
+  # Utilities
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  
+  # UI Components & Helpers
+  cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+  intl: ^0.19.0
+  
+  # Local Storage
+  shared_preferences: ^2.3.2
+  
+  # HTTP & API
+  http: ^1.2.2
+  dio: ^5.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  
+  # Code Generation
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.4.3
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  assets:
+    - assets/
+
+  # Fonts
+  # fonts:
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: assets/fonts/Roboto-Regular.ttf
+  #       - asset: assets/fonts/Roboto-Bold.ttf
+  #         weight: 700

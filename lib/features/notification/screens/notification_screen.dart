@@ -1,0 +1,1 @@
+export 'package:anigoods/features/watchlist/presentation/screens/watchlist_screen.dart';
