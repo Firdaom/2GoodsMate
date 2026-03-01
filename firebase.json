@@ -1,1 +1,41 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"goodsmate-94866","appId":"1:713509545032:android:b3508e70fe0b62a6b8a47d","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"goodsmate-94866","configurations":{"android":"1:713509545032:android:b3508e70fe0b62a6b8a47d","web":"1:713509545032:web:28ddd0455bb1e864b8a47d"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "goodsmate-94866",
+          "appId": "1:713509545032:android:b3508e70fe0b62a6b8a47d",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "goodsmate-94866",
+          "configurations": {
+            "android": "1:713509545032:android:b3508e70fe0b62a6b8a47d",
+            "web": "1:713509545032:web:28ddd0455bb1e864b8a47d"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "dataconnect": {
+      "dataDir": "dataconnect/.dataconnect/pgliteData"
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

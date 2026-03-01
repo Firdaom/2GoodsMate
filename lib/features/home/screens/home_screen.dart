@@ -4,8 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/features/item_detail/presentation/screens/item_detail_screen.dart';
-import 'package:anigoods/features/add_item/screens/addItem_screen.dart';
+import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
 
 

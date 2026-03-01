@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:anigoods/services/moderation_service.dart';
 
 class ContactLink {
   final String platform;
@@ -30,6 +30,10 @@ class ItemModel {
   final List<String> tags;
   final List<ContactLink> contactLinks;
   final DateTime postedAt;
+  final ModerationStatus moderationStatus;
+  final int qualityScore;
+  final int? reportCount;
+  final DateTime? flaggedAt;
 
   ItemModel({
     required this.id,
@@ -46,6 +50,10 @@ class ItemModel {
     required this.tags,
     required this.contactLinks,
     required this.postedAt,
+    required this.moderationStatus,
+    required this.qualityScore,
+    required this.reportCount,
+    required this.flaggedAt,
   });
 
   factory ItemModel.fromFirestore(DocumentSnapshot doc) {
@@ -67,6 +75,13 @@ class ItemModel {
           .map((e) => ContactLink.fromMap(e))
           .toList(),
       postedAt: (d['postedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      moderationStatus: ModerationStatus.values.firstWhere(
+        (e) => e.name == (d['moderationStatus'] ?? 'pending'),
+        orElse: () => ModerationStatus.pending,
+      ),
+      qualityScore: d['qualityScore'] ?? 0,
+      reportCount: d['reportCount'],
+      flaggedAt: (d['flaggedAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -84,6 +99,10 @@ class ItemModel {
         'tags': tags,
         'contactLinks': contactLinks.map((e) => e.toMap()).toList(),
         'postedAt': Timestamp.fromDate(postedAt),
+        'moderationStatus': moderationStatus.name,
+        'qualityScore': qualityScore,
+        'reportCount': reportCount,
+        'flaggedAt': flaggedAt != null ? Timestamp.fromDate(flaggedAt!) : null,
       };
 
   bool matchesQuery(String query) {

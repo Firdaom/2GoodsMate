@@ -1,11 +1,11 @@
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:anigoods/features/auth/presentation/screens/login_screen.dart';
-import 'package:anigoods/features/auth/presentation/screens/register_screen.dart';
-import 'package:anigoods/features/auth/presentation/screens/verify_email_screen.dart';
-import 'package:anigoods/features/home/presentation/screens/home_screen.dart';
-import 'package:anigoods/features/watchlist/presentation/screens/watchlist_screen.dart';
-import 'package:anigoods/features/profile/presentation/screens/profile_screen.dart';
+import 'package:anigoods/features/auth/screens/login_screen.dart';
+import 'package:anigoods/features/auth/screens/register_screen.dart';
+import 'package:anigoods/features/auth/screens/verify_email_screen.dart';
+import 'package:anigoods/features/home/screens/home_screen.dart';
+import 'package:anigoods/features/watchlist/screens/watchlist_screen.dart';
+import 'package:anigoods/features/profile/screens/profile_screen.dart';
 import 'package:anigoods/core/widgets/main_shell.dart';
 
 // Enum for route NAMES — used with context.goNamed() / context.pushNamed()

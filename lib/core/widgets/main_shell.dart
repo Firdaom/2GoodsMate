@@ -70,8 +70,8 @@ class _MainShellState extends State<MainShell> {
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Icon(Icons.bookmark_border, color: AppTheme.textMuted),
-                selectedIcon: Icon(Icons.bookmark, color: AppTheme.accent),
+                icon: Icon(Icons.favorite_border, color: AppTheme.textMuted),
+                selectedIcon: Icon(Icons.favorite, color: AppTheme.accent),
                 label: 'Watchlist',
               ),
               NavigationDestination(

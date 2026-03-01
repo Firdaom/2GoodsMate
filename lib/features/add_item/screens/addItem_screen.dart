@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/models/item_model.dart';
+import 'package:anigoods/services/moderation_service.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
-import 'package:anigoods/features/home/presentation/screens/home_screen.dart';
+import 'package:anigoods/features/home/screens/home_screen.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,7 +28,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String _category  = 'Figures';
   String _rarity    = 'Common';
   String _condition = 'New';
-  File?  _imageFile;
+  XFile?  _imageFile;
   bool   _loading   = false;
 
   final _picker = ImagePicker();
@@ -45,13 +47,22 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null) setState(() => _imageFile = File(picked.path));
+    if (picked != null) setState(() => _imageFile = picked);
   }
 
   Future<String> _uploadImage(String itemId) async {
     if (_imageFile == null) return '';
     final ref = FirebaseStorage.instance.ref('items/$itemId/main.jpg');
-    await ref.putFile(_imageFile!);
+    
+    if (kIsWeb) {
+      // For Web: use putData with bytes
+      final bytes = await _imageFile!.readAsBytes();
+      await ref.putData(bytes);
+    } else {
+      // For Mobile: use putFile
+      await ref.putFile(File(_imageFile!.path));
+    }
+    
     return await ref.getDownloadURL();
   }
 
@@ -95,6 +106,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
         tags: _tagsCtrl.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList(),
         contactLinks: _parseContacts(_contactCtrl.text),
         postedAt: DateTime.now(),
+        moderationStatus: ModerationStatus.pending,
+        qualityScore: 0,
+        reportCount: null,
+        flaggedAt: null,
       );
 
       await docRef.set(item.toFirestore());
@@ -143,7 +158,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   child: _imageFile != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(18),
-                          child: Image.file(_imageFile!, fit: BoxFit.cover),
+                          child: kIsWeb
+                              ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                              : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
                         )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
