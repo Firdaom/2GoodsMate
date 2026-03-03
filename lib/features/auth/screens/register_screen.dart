@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:anigoods/core/router/app_router.dart';
 
 
 // ══════════════════════════════════════════════════════════
@@ -63,10 +64,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
     
     // Send verification email
-    await credential.user?.sendEmailVerification();
+    //await credential.user?.sendEmailVerification();
     
     if (mounted) {
-      context.goNamed('verifyEmail');
+      context.go(RouteNames.home.path);
     }
   } on FirebaseAuthException catch (e) {
     debugPrint('Firebase Error: ${e.code} - ${e.message}');

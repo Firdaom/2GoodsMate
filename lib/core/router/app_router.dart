@@ -61,18 +61,19 @@ final appRouter = GoRouter(
       return RouteNames.login.path;
     }
 
+    // ✅ Email verification disabled temporarily
     // If logged in but email not verified, show verify email screen
-    if (isLoggedIn && !isEmailVerified) {
-      // If not already on verify page, redirect to it
-      if (!isVerifyingEmail) {
-        return RouteNames.verifyEmail.path;
-      }
-      // If already on verify page, stay there
-      return null;
-    }
+    // if (isLoggedIn && !isEmailVerified) {
+    //   // If not already on verify page, redirect to it
+    //   if (!isVerifyingEmail) {
+    //     return RouteNames.verifyEmail.path;
+    //   }
+    //   // If already on verify page, stay there
+    //   return null;
+    // }
 
-    // If logged in, email verified, and still on auth pages, redirect to home
-    if (isLoggedIn && isEmailVerified && (isLoggingIn || isRegistering || isVerifyingEmail)) {
+    // If logged in and still on auth pages, redirect to home
+    if (isLoggedIn && (isLoggingIn || isRegistering || isVerifyingEmail)) {
       return RouteNames.home.path;
     }
 
