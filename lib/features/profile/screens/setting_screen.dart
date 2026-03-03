@@ -1,13 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
+import 'package:anigoods/core/router/app_router.dart';
 
 // ════════════════════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════════════════════
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) {
+                context.go(RouteNames.login.path);
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             SettingsRow(
               emoji: '🚪', label: 'Log Out', danger: true,
-              onTap: () => FirebaseAuth.instance.signOut(),
+              onTap: () => _showLogoutDialog(context),
             ),
             const SettingsRow(emoji: '🗑️', label: 'Delete Account', danger: true),
           ],

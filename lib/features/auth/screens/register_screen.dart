@@ -53,11 +53,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     
     // ✅ สร้าง user document ใน Firestore
+    final email = _emailCtrl.text.trim();
+    final username = email.split('@')[0]; 
+    
     await FirebaseFirestore.instance
         .collection('users')
         .doc(credential.user!.uid)
         .set({
-      'email': _emailCtrl.text.trim(),
+      'email': email,
+      'name': username, // ชื่อเริ่มต้นจาก email
+      'username': username, // username เริ่มต้นจาก email
+      'avatar': '🎨', // อีโมจิเริ่มต้น
       'watchlist': [],  // เริ่มต้นเป็น array เปล่า
       'notificationKeywords': [],
       'createdAt': FieldValue.serverTimestamp(),
@@ -184,16 +190,14 @@ class _Logo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     Container(
-      width: 80, height: 80,
+      width: 120, height: 120,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.accent, AppTheme.accentDark],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-        ),
         shape: BoxShape.circle,
         boxShadow: [BoxShadow(color: AppTheme.accent.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 6))],
       ),
-      child: const Center(child: Text('🎯', style: TextStyle(fontSize: 36))),
+      child: ClipOval(
+        child: Image.asset('assets/2goodsMate_logo.png', fit: BoxFit.cover),
+      ),
     ),
     const SizedBox(height: 16),
     RichText(

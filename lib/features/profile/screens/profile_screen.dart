@@ -66,8 +66,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 12),
                   Text(_user?.name ?? '',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(_user?.username ?? '',
+                  const SizedBox(height: 4),
+                  Text(_user?.username != null && _user!.username.isNotEmpty ? '@${_user!.username}' : '',
                       style: const TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w500)),
                 ]),
               ),
@@ -149,40 +149,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    String? imageUrl = _existingImageUrl;
+    try {
+      String? imageUrl = _existingImageUrl;
 
-    // อัปโหลดรูปถ้ามีการเลือก
-    if (_pickedImage != null) {
-      try {
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('profile_images')
-            .child('$uid.jpg');
-        
-        if (kIsWeb) {
-          // For Web: use putData with bytes
-          final bytes = await _pickedImage!.readAsBytes();
-          await ref.putData(bytes);
-        } else {
-          // For Mobile: use putFile
-          await ref.putFile(File(_pickedImage!.path));
+      // อัปโหลดรูปถ้ามีการเลือก
+      if (_pickedImage != null) {
+        try {
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('profile_images')
+              .child('$uid.jpg');
+          
+          if (kIsWeb) {
+            // For Web: use putData with bytes
+            final bytes = await _pickedImage!.readAsBytes();
+            await ref.putData(bytes);
+          } else {
+            // For Mobile: use putFile
+            await ref.putFile(File(_pickedImage!.path));
+          }
+          
+          imageUrl = await ref.getDownloadURL();
+        } catch (e) {
+          debugPrint('Error uploading image: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to upload image: $e'), backgroundColor: AppTheme.danger),
+            );
+          }
         }
-        
-        imageUrl = await ref.getDownloadURL();
-      } catch (e) {
-        print('Error uploading image: $e');
       }
+
+      // บันทึก user data
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': _nameCtrl.text.trim(),
+        'username': _usernameCtrl.text.trim(),
+        'profileImageUrl': imageUrl,
+      }, SetOptions(merge: true));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: Color(0xFF4ADE80)),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      debugPrint('Error saving profile: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e'), backgroundColor: AppTheme.danger),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-
-    // บันทึก user data
-    await FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'name': _nameCtrl.text.trim(),
-      'username': _usernameCtrl.text.trim(),
-      'profileImageUrl': imageUrl,
-    }, SetOptions(merge: true));
-
-    setState(() => _loading = false);
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -254,7 +274,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             TextField(
               controller: _usernameCtrl,
               style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-              decoration: const InputDecoration(hintText: '@username'),
+              decoration: const InputDecoration(
+                prefixText: '@',
+                prefixStyle: TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                hintText: 'username',
+              ),
             ),
             const SizedBox(height: 28),
             GestureDetector(

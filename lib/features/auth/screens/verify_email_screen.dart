@@ -59,8 +59,29 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
-    if (mounted) context.goNamed(RouteNames.login.name);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) context.go(RouteNames.login.path);
+    }
   }
 
   @override

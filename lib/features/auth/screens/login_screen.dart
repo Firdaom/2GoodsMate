@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 
@@ -42,7 +43,19 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       debugPrint('Firebase Error Code: ${e.code}');
       debugPrint('Firebase Error Message: ${e.message}');
-      setState(() => _error = e.message ?? 'Authentication failed');
+      
+      // Show generic message for wrong credentials
+      String errorMessage;
+      if (e.code == 'user-not-found' || 
+          e.code == 'wrong-password' || 
+          e.code == 'invalid-credential' ||
+          e.code == 'invalid-email') {
+        errorMessage = 'Invalid email or password';
+      } else {
+        errorMessage = e.message ?? 'Authentication failed';
+      }
+      
+      setState(() => _error = errorMessage);
     } catch (e) {
       debugPrint('Unexpected Error: $e');
       setState(() => _error = 'An unexpected error occurred');
@@ -55,11 +68,28 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_canSubmit) return;
     setState(() { _loading = true; _error = null; });
     try {
+      final email = _emailCtrl.text.trim();
+      final username = email.split('@')[0];
+      
       // Create user account
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
         password: _passwordCtrl.text,
       );
+      
+      // Create user document in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+        'email': email,
+        'name': username,
+        'username': username,
+        'avatar': '🎨',
+        'watchlist': [],
+        'notificationKeywords': [],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
       
       // Send email verification
       await FirebaseAuth.instance.currentUser?.sendEmailVerification();
