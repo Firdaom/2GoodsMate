@@ -22,6 +22,7 @@ class AppTheme {
 
   // ─── Status ───────────────────────────────────────────────
   static const Color danger   = Color(0xFFFF5F6B);
+  static const Color success = Color(0xFF4ADE80);
   static const Color heart    = Color(0xFFFF5F6B);
   static const Color condNew      = Color(0xFF4ADE80);
   static const Color condLikeNew  = Color(0xFF60A5FA);

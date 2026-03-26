@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
+import 'package:anigoods/core/services/error_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:anigoods/core/router/app_router.dart';
+import 'package:anigoods/core/widgets/common_widgets.dart';
+import 'package:anigoods/core/services/auth_service.dart';
 
 
 // ══════════════════════════════════════════════════════════
@@ -16,6 +19,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _authService = AuthService();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl  = TextEditingController();
@@ -47,40 +51,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   setState(() { _loading = true; _error = null; });
   try {
     // Create Firebase Auth account
-    final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+    final credential = await _authService.registerWithEmail(
       email: _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
-    
-    // ✅ สร้าง user document ใน Firestore
-    final email = _emailCtrl.text.trim();
-    final username = email.split('@')[0]; 
-    
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(credential.user!.uid)
-        .set({
-      'email': email,
-      'name': username, // ชื่อเริ่มต้นจาก email
-      'username': username, // username เริ่มต้นจาก email
-      'avatar': '🎨', // อีโมจิเริ่มต้น
-      'watchlist': [],  // เริ่มต้นเป็น array เปล่า
-      'notificationKeywords': [],
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    
-    // Send verification email
-    //await credential.user?.sendEmailVerification();
-    
+
     if (mounted) {
       context.go(RouteNames.home.path);
     }
-  } on FirebaseAuthException catch (e) {
-    debugPrint('Firebase Error: ${e.code} - ${e.message}');
-    setState(() => _error = e.message ?? 'Account creation failed');
   } catch (e) {
-    debugPrint('Unexpected Error: $e');
-    setState(() => _error = 'An unexpected error occurred');
+    ErrorHandler.logError('register_screen._register()', e);
+    setState(() => _error = ErrorHandler.getUserMessage(e));
   } finally {
     if (mounted) setState(() => _loading = false);
   }
@@ -155,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 12),
               ],
 
-              _PrimaryButton(
+              PrimaryButton(
                 label: 'Create Account',
                 onTap: _canSubmit && !_loading ? _register : null,
                 loading: _loading,
@@ -166,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Text('Already have an account? ',
                     style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => context.go('/login'),
                   child: const Text('Sign In',
                       style: TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w600)),
                 ),
@@ -225,40 +206,3 @@ class _FieldLabel extends StatelessWidget {
   );
 }
 
-class _PrimaryButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  final bool loading;
-  const _PrimaryButton({required this.label, this.onTap, this.loading = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          gradient: enabled ? const LinearGradient(colors: [AppTheme.accent, AppTheme.accentDark]) : null,
-          color: enabled ? null : AppTheme.border,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: enabled
-              ? [BoxShadow(color: AppTheme.accent.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 4))]
-              : null,
-        ),
-        child: Center(
-          child: loading
-              ? const SizedBox(width: 20, height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(label,
-                  style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700,
-                    color: enabled ? Colors.white : AppTheme.textMuted,
-                  )),
-        ),
-      ),
-    );
-  }
-}

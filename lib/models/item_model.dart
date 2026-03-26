@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:anigoods/services/moderation_service.dart';
+import 'package:anigoods/core/services/moderation_service.dart';
+import 'package:anigoods/core/constants/app_constants.dart';
 
 class ContactLink {
   final String platform;
@@ -7,10 +10,8 @@ class ContactLink {
 
   ContactLink({required this.platform, required this.url});
 
-  factory ContactLink.fromMap(Map<String, dynamic> map) => ContactLink(
-        platform: map['platform'] ?? '',
-        url: map['url'] ?? '',
-      );
+  factory ContactLink.fromMap(Map<String, dynamic> map) =>
+      ContactLink(platform: map['platform'] ?? '', url: map['url'] ?? '');
 
   Map<String, dynamic> toMap() => {'platform': platform, 'url': url};
 }
@@ -23,9 +24,10 @@ class ItemModel {
   final String rarity;
   final double price;
   final String condition;
-  final String imageUrl;   // ← URL จาก Firebase Storage
+  final String imageUrl;
   final String sellerId;
   final String sellerName;
+  final bool sellerVerified;
   final String description;
   final List<String> tags;
   final List<ContactLink> contactLinks;
@@ -46,6 +48,7 @@ class ItemModel {
     required this.imageUrl,
     required this.sellerId,
     required this.sellerName,
+    required this.sellerVerified,
     required this.description,
     required this.tags,
     required this.contactLinks,
@@ -57,58 +60,63 @@ class ItemModel {
   });
 
   factory ItemModel.fromFirestore(DocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>;
     return ItemModel(
       id: doc.id,
-      title: d['title'] ?? '',
-      series: d['series'] ?? '',
-      category: d['category'] ?? '',
-      rarity: d['rarity'] ?? 'Common',
-      price: (d['price'] ?? 0).toDouble(),
-      condition: d['condition'] ?? 'Good',
-      imageUrl: d['imageUrl'] ?? '',
-      sellerId: d['sellerId'] ?? '',
-      sellerName: d['sellerName'] ?? '',
-      description: d['description'] ?? '',
-      tags: List<String>.from(d['tags'] ?? []),
-      contactLinks: (d['contactLinks'] as List<dynamic>? ?? [])
-          .map((e) => ContactLink.fromMap(e))
+      title: data[ItemFields.title] ?? '',
+      series: data[ItemFields.series] ?? '',
+      category: data[ItemFields.category] ?? '',
+      rarity: data[ItemFields.rarity] ?? 'Common',
+      price: (data[ItemFields.price] ?? 0).toDouble(),
+      condition: data[ItemFields.condition] ?? 'Good',
+      imageUrl: data[ItemFields.imageUrl] ?? '',
+      sellerId: data[ItemFields.sellerId] ?? '',
+      sellerName: data[ItemFields.sellerName] ?? '',
+      sellerVerified: data[ItemFields.sellerVerified] ?? false,
+      description: data[ItemFields.description] ?? '',
+      tags: List<String>.from(data[ItemFields.tags] ?? []),
+      contactLinks: (data[ItemFields.contactLinks] as List<dynamic>? ?? [])
+          .map((linkMap) => ContactLink.fromMap(linkMap))
           .toList(),
-      postedAt: (d['postedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      postedAt:
+          (data[ItemFields.postedAt] as Timestamp?)?.toDate() ?? DateTime.now(),
       moderationStatus: ModerationStatus.values.firstWhere(
-        (e) => e.name == (d['moderationStatus'] ?? 'pending'),
+        (e) => e.name == (data[ItemFields.moderationStatus] ?? 'pending'),
         orElse: () => ModerationStatus.pending,
       ),
-      qualityScore: d['qualityScore'] ?? 0,
-      reportCount: d['reportCount'],
-      flaggedAt: (d['flaggedAt'] as Timestamp?)?.toDate(),
+      qualityScore: data[ItemFields.qualityScore] ?? 0,
+      reportCount: data[ItemFields.reportCount],
+      flaggedAt: (data[ItemFields.flaggedAt] as Timestamp?)?.toDate(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-        'title': title,
-        'series': series,
-        'category': category,
-        'rarity': rarity,
-        'price': price,
-        'condition': condition,
-        'imageUrl': imageUrl,
-        'sellerId': sellerId,
-        'sellerName': sellerName,
-        'description': description,
-        'tags': tags,
-        'contactLinks': contactLinks.map((e) => e.toMap()).toList(),
-        'postedAt': Timestamp.fromDate(postedAt),
-        'moderationStatus': moderationStatus.name,
-        'qualityScore': qualityScore,
-        'reportCount': reportCount,
-        'flaggedAt': flaggedAt != null ? Timestamp.fromDate(flaggedAt!) : null,
-      };
+    ItemFields.title: title,
+    ItemFields.series: series,
+    ItemFields.category: category,
+    ItemFields.rarity: rarity,
+    ItemFields.price: price,
+    ItemFields.condition: condition,
+    ItemFields.imageUrl: imageUrl,
+    ItemFields.sellerId: sellerId,
+    ItemFields.sellerName: sellerName,
+    ItemFields.sellerVerified: sellerVerified,
+    ItemFields.description: description,
+    ItemFields.tags: tags,
+    ItemFields.contactLinks: contactLinks.map((link) => link.toMap()).toList(),
+    ItemFields.postedAt: Timestamp.fromDate(postedAt),
+    ItemFields.moderationStatus: moderationStatus.name,
+    ItemFields.qualityScore: qualityScore,
+    ItemFields.reportCount: reportCount,
+    ItemFields.flaggedAt: flaggedAt != null
+        ? Timestamp.fromDate(flaggedAt!)
+        : null,
+  };
 
   bool matchesQuery(String query) {
-    final q = query.toLowerCase();
-    return title.toLowerCase().contains(q) ||
-        series.toLowerCase().contains(q) ||
-        tags.any((t) => t.toLowerCase().contains(q));
+    final lowercaseQuery = query.toLowerCase();
+    return title.toLowerCase().contains(lowercaseQuery) ||
+        series.toLowerCase().contains(lowercaseQuery) ||
+        tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery));
   }
 }

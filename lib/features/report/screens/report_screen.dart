@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/models/report_model.dart';
-import 'package:anigoods/services/moderation_service.dart';
+import 'package:anigoods/core/services/moderation_service.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
+import 'package:anigoods/core/constants/app_constants.dart';
 
 class ReportItemScreen extends StatefulWidget {
   final ItemModel item;
@@ -42,7 +43,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('Please login first');
 
-      final reportRef = FirebaseFirestore.instance.collection('reports').doc();
+      final reportRef = FirebaseFirestore.instance
+          .collection(FirebaseCollections.reports)
+          .doc();
 
       final report = ReportModel(
         id: reportRef.id,
@@ -51,8 +54,8 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
         reporterId: user.uid,
         reporterName: user.email?.split('@')[0] ?? 'Anonymous',
         reason: _selectedReason!,
-        additionalInfo: _additionalInfoCtrl.text.trim().isEmpty 
-            ? null 
+        additionalInfo: _additionalInfoCtrl.text.trim().isEmpty
+            ? null
             : _additionalInfoCtrl.text.trim(),
         createdAt: DateTime.now(),
       );
@@ -89,7 +92,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
   // ✅ Auto flag ถ้ามี reports เยอะ
   Future<void> _checkAutoFlag(String itemId) async {
     final snapshot = await FirebaseFirestore.instance
-        .collection('reports')
+        .collection(FirebaseCollections.reports)
         .where('itemId', isEqualTo: itemId)
         .where('reviewed', isEqualTo: false)
         .get();
@@ -97,13 +100,13 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
     if (snapshot.docs.length >= 3) {
       // มี 3+ reports → flag item
       await FirebaseFirestore.instance
-          .collection('items')
+          .collection(FirebaseCollections.items)
           .doc(itemId)
           .update({
-        'moderationStatus': ModerationStatus.flagged.name,
-        'flaggedAt': FieldValue.serverTimestamp(),
-        'reportCount': snapshot.docs.length,
-      });
+            ItemFields.moderationStatus: ModerationStatus.flagged.name,
+            'flaggedAt': FieldValue.serverTimestamp(),
+            'reportCount': snapshot.docs.length,
+          });
     }
   }
 
@@ -139,8 +142,13 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                       height: 50,
                       color: AppTheme.accentLight,
                       child: widget.item.imageUrl.isNotEmpty
-                          ? Image.network(widget.item.imageUrl, fit: BoxFit.cover)
-                          : const Center(child: Text('🎁', style: TextStyle(fontSize: 20))),
+                          ? Image.network(
+                              widget.item.imageUrl,
+                              fit: BoxFit.cover,
+                            )
+                          : const Center(
+                              child: Text('🎁', style: TextStyle(fontSize: 20)),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -234,7 +242,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
   Widget _buildReasonOption(ReportReason reason) {
     final isSelected = _selectedReason == reason;
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedReason = reason),
       child: Container(
@@ -251,7 +259,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
         child: Row(
           children: [
             Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
               color: isSelected ? AppTheme.accent : AppTheme.textMuted,
               size: 20,
             ),

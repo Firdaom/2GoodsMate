@@ -77,6 +77,31 @@ class RarityBadge extends StatelessWidget {
   }
 }
 
+// ─── Verified Badge ───────────────────────────────────────
+class VerifiedBadge extends StatelessWidget {
+  final double size;
+  const VerifiedBadge({super.key, this.size = 14});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: Color(0xFF1DA1F2), // Instagram/Twitter blue
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.check,
+          color: Colors.white,
+          size: size * 0.7,
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Condition + Rarity row ───────────────────────────────
 class ConditionWithRarity extends StatelessWidget {
   final String condition;
@@ -164,7 +189,28 @@ class ItemCard extends StatelessWidget {
                     '${item.series} • ${item.category}',
                     style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Seller: ${item.sellerName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                      if (item.sellerVerified) ...[
+                        const SizedBox(width: 4),
+                        const VerifiedBadge(size: 12),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -348,7 +394,7 @@ class ContactButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = _platforms[link.platform] ??
+    final platformInfo = _platforms[link.platform] ??
         {'emoji': '🔗', 'name': link.platform};
     return GestureDetector(
       onTap: onTap,
@@ -368,10 +414,10 @@ class ContactButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(p['emoji']!, style: const TextStyle(fontSize: 16)),
+            Text(platformInfo['emoji']!, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
             Text(
-              p['name']!,
+              platformInfo['name']!,
               style: const TextStyle(
                 fontSize: 12, fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -383,3 +429,60 @@ class ContactButton extends StatelessWidget {
     );
   }
 }
+
+
+// ─────────shared buttons──────────────────────────────────────────────
+    class PrimaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+  final bool loading;
+
+  const PrimaryButton({
+    required this.label,
+    this.onTap,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: enabled
+              ? const LinearGradient(
+                  colors: [AppTheme.accent, AppTheme.accentDark])
+              : null,
+          color: enabled ? null : AppTheme.border,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: enabled
+              ? [BoxShadow(
+                  color: AppTheme.accent.withOpacity(0.25),
+                  blurRadius: 16, offset: const Offset(0, 4),
+                )]
+              : null,
+        ),
+        child: Center(
+          child: loading
+              ? const SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white,
+                  ))
+              : Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w700,
+                    color: enabled ? Colors.white : AppTheme.textMuted,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+

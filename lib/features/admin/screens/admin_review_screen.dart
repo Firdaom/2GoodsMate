@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/models/report_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
-import 'package:anigoods/services/moderation_service.dart';
+import 'package:anigoods/core/services/moderation_service.dart';
+import 'package:anigoods/core/constants/app_constants.dart';
 
 class AdminReviewScreen extends StatelessWidget {
   const AdminReviewScreen({super.key});
@@ -24,11 +25,7 @@ class AdminReviewScreen extends StatelessWidget {
           ),
         ),
         body: const TabBarView(
-          children: [
-            _PendingItemsTab(),
-            _FlaggedItemsTab(),
-            _ReportsTab(),
-          ],
+          children: [_PendingItemsTab(), _FlaggedItemsTab(), _ReportsTab()],
         ),
       ),
     );
@@ -43,23 +40,29 @@ class _PendingItemsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('items')
+          .collection(FirebaseCollections.items)
           .where('moderationStatus', isEqualTo: ModerationStatus.pending.name)
           .orderBy('postedAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.accent),
+          );
         }
 
-        final items = snapshot.data?.docs
+        final items =
+            snapshot.data?.docs
                 .map((d) => ItemModel.fromFirestore(d))
                 .toList() ??
             [];
 
         if (items.isEmpty) {
           return const Center(
-            child: Text('No pending items', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text(
+              'No pending items',
+              style: TextStyle(color: AppTheme.textMuted),
+            ),
           );
         }
 
@@ -67,6 +70,7 @@ class _PendingItemsTab extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           itemCount: items.length,
           itemBuilder: (_, i) => _AdminItemCard(
+            key: ValueKey(items[i].id),
             item: items[i],
             onApprove: () => _approveItem(context, items[i].id),
             onReject: () => _rejectItem(context, items[i].id),
@@ -77,27 +81,37 @@ class _PendingItemsTab extends StatelessWidget {
   }
 
   Future<void> _approveItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance.collection('items').doc(itemId).update({
-      'moderationStatus': ModerationStatus.approved.name,
-      'reviewedAt': FieldValue.serverTimestamp(),
-    });
-    
+    await FirebaseFirestore.instance
+        .collection(FirebaseCollections.items)
+        .doc(itemId)
+        .update({
+          ItemFields.moderationStatus: ModerationStatus.approved.name,
+          'reviewedAt':
+              FieldValue.serverTimestamp(), // ถ้าใช้บ่อยให้เพิ่ม ItemFields.reviewedAt
+        });
+
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item approved ✅')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Item approved ✅')));
     }
   }
 
   Future<void> _rejectItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance.collection('items').doc(itemId).update({
-      'moderationStatus': ModerationStatus.rejected.name,
-      'reviewedAt': FieldValue.serverTimestamp(),
-    });
-    
+    await FirebaseFirestore.instance
+        .collection(FirebaseCollections.items)
+        .doc(itemId)
+        .update({
+          ItemFields.moderationStatus: ModerationStatus.rejected.name,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item rejected ❌'), backgroundColor: AppTheme.danger),
+        const SnackBar(
+          content: Text('Item rejected ❌'),
+          backgroundColor: AppTheme.danger,
+        ),
       );
     }
   }
@@ -111,23 +125,29 @@ class _FlaggedItemsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('items')
+          .collection(FirebaseCollections.items)
           .where('moderationStatus', isEqualTo: ModerationStatus.flagged.name)
           .orderBy('flaggedAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.accent),
+          );
         }
 
-        final items = snapshot.data?.docs
+        final items =
+            snapshot.data?.docs
                 .map((d) => ItemModel.fromFirestore(d))
                 .toList() ??
             [];
 
         if (items.isEmpty) {
           return const Center(
-            child: Text('No flagged items', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text(
+              'No flagged items',
+              style: TextStyle(color: AppTheme.textMuted),
+            ),
           );
         }
 
@@ -135,6 +155,7 @@ class _FlaggedItemsTab extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           itemCount: items.length,
           itemBuilder: (_, i) => _AdminItemCard(
+            key: ValueKey(items[i].id),
             item: items[i],
             showReportCount: true,
             onApprove: () => _unflagItem(context, items[i].id),
@@ -146,40 +167,49 @@ class _FlaggedItemsTab extends StatelessWidget {
   }
 
   Future<void> _unflagItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance.collection('items').doc(itemId).update({
-      'moderationStatus': ModerationStatus.approved.name,
-      'reviewedAt': FieldValue.serverTimestamp(),
-    });
-    
+    await FirebaseFirestore.instance
+        .collection(FirebaseCollections.items)
+        .doc(itemId)
+        .update({
+          'moderationStatus': ModerationStatus.approved.name,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+
     // Mark all reports as reviewed
     final reports = await FirebaseFirestore.instance
-        .collection('reports')
+        .collection(FirebaseCollections.reports)
         .where('itemId', isEqualTo: itemId)
         .get();
-    
+
     for (var doc in reports.docs) {
       await doc.reference.update({
         'reviewed': true,
         'adminNote': 'Item approved after review',
       });
     }
-    
+
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item unflagged ✅')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Item unflagged ✅')));
     }
   }
 
   Future<void> _rejectItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance.collection('items').doc(itemId).update({
-      'moderationStatus': ModerationStatus.rejected.name,
-      'reviewedAt': FieldValue.serverTimestamp(),
-    });
-    
+    await FirebaseFirestore.instance
+        .collection(FirebaseCollections.items)
+        .doc(itemId)
+        .update({
+          'moderationStatus': ModerationStatus.rejected.name,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item removed ❌'), backgroundColor: AppTheme.danger),
+        const SnackBar(
+          content: Text('Item removed ❌'),
+          backgroundColor: AppTheme.danger,
+        ),
       );
     }
   }
@@ -193,30 +223,39 @@ class _ReportsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('reports')
+          .collection(FirebaseCollections.reports)
           .where('reviewed', isEqualTo: false)
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.accent),
+          );
         }
 
-        final reports = snapshot.data?.docs
+        final reports =
+            snapshot.data?.docs
                 .map((d) => ReportModel.fromFirestore(d))
                 .toList() ??
             [];
 
         if (reports.isEmpty) {
           return const Center(
-            child: Text('No unreviewed reports', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text(
+              'No unreviewed reports',
+              style: TextStyle(color: AppTheme.textMuted),
+            ),
           );
         }
 
         return ListView.builder(
           padding: const EdgeInsets.all(20),
           itemCount: reports.length,
-          itemBuilder: (_, i) => _ReportCard(report: reports[i]),
+          itemBuilder: (_, i) => _ReportCard(
+            key: ValueKey(reports[i].id),
+            report: reports[i],
+          ),
         );
       },
     );
@@ -231,6 +270,7 @@ class _AdminItemCard extends StatelessWidget {
   final VoidCallback onReject;
 
   const _AdminItemCard({
+    super.key,
     required this.item,
     this.showReportCount = false,
     required this.onApprove,
@@ -260,7 +300,9 @@ class _AdminItemCard extends StatelessWidget {
                   color: AppTheme.accentLight,
                   child: item.imageUrl.isNotEmpty
                       ? Image.network(item.imageUrl, fit: BoxFit.cover)
-                      : const Center(child: Text('🎁', style: TextStyle(fontSize: 24))),
+                      : const Center(
+                          child: Text('🎁', style: TextStyle(fontSize: 24)),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -281,14 +323,17 @@ class _AdminItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '฿${_formatPrice(item.price)} • ${item.sellerName}',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textMuted,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
           Text(
             item.description,
@@ -296,7 +341,7 @@ class _AdminItemCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          
+
           if (showReportCount) ...[
             const SizedBox(height: 8),
             Container(
@@ -315,7 +360,7 @@ class _AdminItemCard extends StatelessWidget {
               ),
             ),
           ],
-          
+
           const SizedBox(height: 12),
           Row(
             children: [
@@ -359,7 +404,10 @@ class _AdminItemCard extends StatelessWidget {
 // Report card
 class _ReportCard extends StatelessWidget {
   final ReportModel report;
-  const _ReportCard({required this.report});
+  const _ReportCard({
+    super.key,
+    required this.report,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +452,10 @@ class _ReportCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               report.additionalInfo!,
-              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

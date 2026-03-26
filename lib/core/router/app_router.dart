@@ -6,10 +6,14 @@ import 'package:anigoods/features/auth/screens/verify_email_screen.dart';
 import 'package:anigoods/features/home/screens/home_screen.dart';
 import 'package:anigoods/features/watchlist/screens/watchlist_screen.dart';
 import 'package:anigoods/features/profile/screens/profile_screen.dart';
+import 'package:anigoods/features/splash/screens/splash_screen.dart';
+import 'package:anigoods/features/landing/screens/landing_screen.dart';
 import 'package:anigoods/core/widgets/main_shell.dart';
 
 // Enum for route NAMES — used with context.goNamed() / context.pushNamed()
 enum RouteNames {
+  splash,
+  landing,
   login,
   register,
   verifyEmail,
@@ -22,8 +26,12 @@ enum RouteNames {
   // GoRouter requires a String for 'path', this keeps path & name in sync
   String get path {
     switch (this) {
-      case RouteNames.login:
+      case RouteNames.splash:
         return '/';
+      case RouteNames.landing:
+        return '/landing';
+      case RouteNames.login:
+        return '/login';
       case RouteNames.register:
         return '/register';
       case RouteNames.verifyEmail:
@@ -40,25 +48,32 @@ enum RouteNames {
 
 // GoRouter instance with auth redirect logic
 final appRouter = GoRouter(
-  initialLocation: RouteNames.login.path,
+  initialLocation: RouteNames.splash.path,
   debugLogDiagnostics: true, // Remove in production
   redirect: (context, state) {
     // Check if user is logged in
     final isLoggedIn = FirebaseAuth.instance.currentUser != null;
     final isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
-    
+
+    final isSplash = state.matchedLocation == RouteNames.splash.path;
+    final isLanding = state.matchedLocation == RouteNames.landing.path;
     final isLoggingIn = state.matchedLocation == RouteNames.login.path;
     final isRegistering = state.matchedLocation == RouteNames.register.path;
     final isVerifyingEmail = state.matchedLocation == RouteNames.verifyEmail.path;
 
-    // If not logged in, allow login & register pages
+    // Allow splash screen for everyone
+    if (isSplash) {
+      return null;
+    }
+
+    // If not logged in, allow landing, login & register pages
     if (!isLoggedIn) {
-      // Allow access to login and register pages
-      if (isLoggingIn || isRegistering) {
+      // Allow access to landing, login and register pages
+      if (isLanding || isLoggingIn || isRegistering) {
         return null;
       }
-      // Redirect to login for any other page
-      return RouteNames.login.path;
+      // Redirect to landing for any other page
+      return RouteNames.landing.path;
     }
 
     // ✅ Email verification disabled temporarily
@@ -73,7 +88,7 @@ final appRouter = GoRouter(
     // }
 
     // If logged in and still on auth pages, redirect to home
-    if (isLoggedIn && (isLoggingIn || isRegistering || isVerifyingEmail)) {
+    if (isLoggedIn && (isLanding || isLoggingIn || isRegistering || isVerifyingEmail)) {
       return RouteNames.home.path;
     }
 
@@ -81,6 +96,16 @@ final appRouter = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(
+      path: RouteNames.splash.path,
+      name: RouteNames.splash.name,
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.landing.path,
+      name: RouteNames.landing.name,
+      builder: (context, state) => const LandingScreen(),
+    ),
     GoRoute(
       path: RouteNames.login.path,
       name: RouteNames.login.name,

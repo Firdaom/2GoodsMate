@@ -127,7 +127,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 child: item.imageUrl.isNotEmpty
                     ? Image.network(
                         item.imageUrl,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Center(
                           child: Text('🎁', style: TextStyle(fontSize: 64)),
                         ),
@@ -157,11 +157,46 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${item.series} • ${item.category}',
+                    '${item.series} • ${item.category} • Posted ${_timeAgo(item.postedAt)}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppTheme.textMuted,
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppTheme.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '👤',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              item.sellerName,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (item.sellerVerified) ...[
+                              const SizedBox(width: 5),
+                              const VerifiedBadge(size: 14),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
@@ -220,74 +255,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Seller card
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.border),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.accent, AppTheme.accentDark],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: Text(
-                              item.sellerName.isNotEmpty
-                                  ? item.sellerName[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.sellerName,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          _timeAgo(item.postedAt),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-
                   // Description
                   const _Label('DESCRIPTION'),
                   const SizedBox(height: 6),
@@ -342,7 +309,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       runSpacing: 8,
                       children: item.contactLinks
                           .map(
-                            (link) => ContactButton(link: link, onTap: () {}),
+                            (link) => ContactButton(
+                              link: link,
+                              onTap: () {},
+                            ),
                           )
                           .toList(),
                     ),
