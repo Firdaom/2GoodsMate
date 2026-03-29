@@ -24,7 +24,7 @@ class ItemModel {
   final String rarity;
   final double price;
   final String condition;
-  final String imageUrl;
+  final List<String> imageUrls;
   final String sellerId;
   final String sellerName;
   final bool sellerVerified;
@@ -45,7 +45,7 @@ class ItemModel {
     required this.rarity,
     required this.price,
     required this.condition,
-    required this.imageUrl,
+    required this.imageUrls,
     required this.sellerId,
     required this.sellerName,
     required this.sellerVerified,
@@ -69,7 +69,7 @@ class ItemModel {
       rarity: data[ItemFields.rarity] ?? 'Common',
       price: (data[ItemFields.price] ?? 0).toDouble(),
       condition: data[ItemFields.condition] ?? 'Good',
-      imageUrl: data[ItemFields.imageUrl] ?? '',
+      imageUrls: _parseImageUrls(data[ItemFields.imageUrls], data[ItemFields.imageUrl]),
       sellerId: data[ItemFields.sellerId] ?? '',
       sellerName: data[ItemFields.sellerName] ?? '',
       sellerVerified: data[ItemFields.sellerVerified] ?? false,
@@ -90,6 +90,20 @@ class ItemModel {
     );
   }
 
+  /// Helper method to parse imageUrls with backward compatibility
+  static List<String> _parseImageUrls(dynamic imageUrlsData, dynamic imageUrlData) {
+    // ถ้ามี imageUrls (array) ใช้ตัวนี้
+    if (imageUrlsData != null && imageUrlsData is List) {
+      return List<String>.from(imageUrlsData);
+    }
+    // ถ้าไม่มี แต่มี imageUrl (string เดี่ยว) ให้แปลงเป็น array
+    if (imageUrlData != null && imageUrlData is String && imageUrlData.isNotEmpty) {
+      return [imageUrlData];
+    }
+    // ถ้าไม่มีทั้งสอง return empty list
+    return [];
+  }
+
   Map<String, dynamic> toFirestore() => {
     ItemFields.title: title,
     ItemFields.series: series,
@@ -97,7 +111,8 @@ class ItemModel {
     ItemFields.rarity: rarity,
     ItemFields.price: price,
     ItemFields.condition: condition,
-    ItemFields.imageUrl: imageUrl,
+    ItemFields.imageUrls: imageUrls,
+    ItemFields.imageUrl: imageUrls.isNotEmpty ? imageUrls[0] : '', // Keep for backward compatibility
     ItemFields.sellerId: sellerId,
     ItemFields.sellerName: sellerName,
     ItemFields.sellerVerified: sellerVerified,

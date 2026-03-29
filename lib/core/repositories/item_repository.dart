@@ -21,7 +21,7 @@ class ItemRepository {
     required String description,
     required List<String> tags,
     required List<ContactLink> contactLinks,
-    XFile? imageFile,
+    List<XFile>? imageFiles,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('User not authenticated');
@@ -40,15 +40,22 @@ class ItemRepository {
 
     // Create document reference first to get ID
     final docRef = _firestore.collection(FirebaseCollections.items).doc();
-    // Upload image if provided
-    String imageUrl = '';
-    if (imageFile != null) {
-      imageUrl = await _storageService
-          .uploadItemImage(itemId: docRef.id, imageFile: imageFile)
-          .timeout(
-            AppConstants.imageUploadTimeout,
-            onTimeout: () => throw Exception('Image upload timeout'),
-          );
+
+    // Upload images if provided
+    List<String> imageUrls = [];
+    if (imageFiles != null && imageFiles.isNotEmpty) {
+      for (int i = 0; i < imageFiles.length; i++) {
+        final imageUrl = await _storageService
+            .uploadItemImage(
+              itemId: '${docRef.id}_$i', // Add index to make unique
+              imageFile: imageFiles[i],
+            )
+            .timeout(
+              AppConstants.imageUploadTimeout,
+              onTimeout: () => throw Exception('Image upload timeout'),
+            );
+        imageUrls.add(imageUrl);
+      }
     }
 
     // Create item model
@@ -60,7 +67,7 @@ class ItemRepository {
       rarity: rarity,
       price: price,
       condition: condition,
-      imageUrl: imageUrl,
+      imageUrls: imageUrls,
       sellerId: user.uid,
       sellerName: sellerName,
       sellerVerified: sellerVerified,

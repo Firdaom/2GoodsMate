@@ -130,7 +130,7 @@ class ModerationService {
     }
 
     // 5. Check if has image
-    if (item.imageUrl.isEmpty) {
+    if (item.imageUrls.isEmpty) {
       return ModerationResult.rejected('At least one image is required');
     }
 
@@ -160,7 +160,7 @@ class ModerationService {
     int score = 0;
 
     // Image quality (30 points)
-    if (item.imageUrl.isNotEmpty) score += 20;
+    if (item.imageUrls.isNotEmpty) score += 20;
     // ถ้ามีหลายรูป (ต้องเพิ่ม imageUrls field ใน ItemModel)
     // if (item.imageUrls?.length >= 3) score += 10;
 

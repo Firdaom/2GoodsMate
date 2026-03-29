@@ -298,8 +298,8 @@ class _AdminItemCard extends StatelessWidget {
                   width: 60,
                   height: 60,
                   color: AppTheme.accentLight,
-                  child: item.imageUrl.isNotEmpty
-                      ? Image.network(item.imageUrl, fit: BoxFit.cover)
+                  child: item.imageUrls.isNotEmpty
+                      ? Image.network(item.imageUrls[0], fit: BoxFit.cover)
                       : const Center(
                           child: Text('🎁', style: TextStyle(fontSize: 24)),
                         ),

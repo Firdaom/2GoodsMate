@@ -4,6 +4,7 @@ import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/services/error_handler.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:anigoods/core/repositories/item_repository.dart';
 
@@ -29,7 +30,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String _category  = 'Figures';
   String _rarity    = 'Common';
   String _condition = 'New';
-  XFile?  _imageFile;
+  List<XFile> _imageFiles = [];
   bool   _loading   = false;
 
   final _picker = ImagePicker();
@@ -47,8 +48,35 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _priceCtrl.text.isNotEmpty && _descCtrl.text.isNotEmpty;
 
   Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null) setState(() => _imageFile = picked);
+    final picked = await _picker.pickMultiImage(imageQuality: 85);
+    if (picked.isNotEmpty) {
+      setState(() => _imageFiles = picked);
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() => _imageFiles.removeAt(index));
+  }
+
+  /// Build image preview widget
+  Widget _buildImagePreview(XFile imageFile, {bool large = false}) {
+    if (kIsWeb) {
+      return FutureBuilder<List<int>>(
+        future: imageFile.readAsBytes(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.memory(Uint8List.fromList(snapshot.data!),
+                fit: BoxFit.contain, width: double.infinity);
+          }
+          return const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        },
+      );
+    } else {
+      return Image.file(File(imageFile.path),
+          fit: BoxFit.contain, width: double.infinity);
+    }
   }
 
 
@@ -106,7 +134,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           .where((tag) => tag.isNotEmpty)
           .toList(),
       contactLinks: _parseContacts(_contactCtrl.text),
-      imageFile: _imageFile,
+      imageFiles: _imageFiles.isNotEmpty ? _imageFiles : null,
     );
 
     if (mounted) {
@@ -125,42 +153,157 @@ class _AddItemScreenState extends State<AddItemScreen> {
 }
 
   /// Build image picker section
-  Widget _buildImagePicker() => Center(
-    child: GestureDetector(
-      onTap: _pickImage,
-      child: Container(
-        width: 120, height: 120,
-        decoration: BoxDecoration(
-          color: AppTheme.accentLight,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppTheme.accent.withOpacity(0.3),
-            width: 1.5,
+  Widget _buildImagePicker() {
+    if (_imageFiles.isEmpty) {
+      return Center(
+        child: GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppTheme.accentLight,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.accent.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_photo_alternate_outlined,
+                    color: AppTheme.accent, size: 32),
+                const SizedBox(height: 6),
+                const Text('Add Photos',
+                    style: TextStyle(
+                      fontSize: 12, color: AppTheme.accent,
+                      fontWeight: FontWeight.w600,
+                    )),
+              ],
+            ),
           ),
         ),
-        child: _imageFile != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: kIsWeb
-                    ? Image.network(_imageFile!.path, fit: BoxFit.cover)
-                    : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Carousel with PageView
+        Container(
+          height: 280,
+          color: AppTheme.accentLight,
+          child: PageView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const PageScrollPhysics(),
+            pageSnapping: true,
+            itemCount: _imageFiles.length + 1,
+            itemBuilder: (context, index) {
+              if (index == _imageFiles.length) {
+                // Add More button
+                return Center(
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.accent.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate,
+                              size: 48, color: AppTheme.accent),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Add More Photos',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              // Show image
+              return Stack(
                 children: [
-                  Icon(Icons.add_photo_alternate_outlined,
-                      color: AppTheme.accent, size: 32),
-                  const SizedBox(height: 6),
-                  const Text('Add Photo',
-                      style: TextStyle(
-                        fontSize: 12, color: AppTheme.accent,
-                        fontWeight: FontWeight.w600,
-                      )),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    alignment: Alignment.center,
+                    child: _buildImagePreview(_imageFiles[index]),
+                  ),
+                  // Delete button
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: () => _removeImage(index),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.danger,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-      ),
-    ),
-  );
+              );
+            },
+          ),
+        ),
+
+        // Thumbnail list
+        if (_imageFiles.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _imageFiles.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  width: 80,
+                  margin: const EdgeInsets.only(right: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      color: AppTheme.accentLight,
+                      alignment: Alignment.center,
+                      child: _buildImagePreview(_imageFiles[index]),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 
   /// Build title and series fields
   Widget _buildTitleAndSeries() => Column(
@@ -341,6 +484,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        physics: _imageFiles.isNotEmpty
+            ? const NeverScrollableScrollPhysics()
+            : const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

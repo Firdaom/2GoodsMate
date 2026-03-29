@@ -141,9 +141,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                       width: 50,
                       height: 50,
                       color: AppTheme.accentLight,
-                      child: widget.item.imageUrl.isNotEmpty
+                      child: widget.item.imageUrls.isNotEmpty
                           ? Image.network(
-                              widget.item.imageUrl,
+                              widget.item.imageUrls[0],
                               fit: BoxFit.cover,
                             )
                           : const Center(

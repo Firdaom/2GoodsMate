@@ -122,19 +122,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: AppTheme.accentLight,
-                child: item.imageUrl.isNotEmpty
-                    ? Image.network(
-                        item.imageUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Text('🎁', style: TextStyle(fontSize: 64)),
-                        ),
-                      )
-                    : const Center(
-                        child: Text('🎁', style: TextStyle(fontSize: 64)),
-                      ),
+              background: ImageCarousel(
+                imageUrls: item.imageUrls,
+                height: 280,
               ),
             ),
           ),

@@ -44,6 +44,7 @@ class ItemFields {
   static const String price = 'price';
   static const String condition = 'condition';
   static const String imageUrl = 'imageUrl';
+  static const String imageUrls = 'imageUrls';
   static const String sellerId = 'sellerId';
   static const String sellerName = 'sellerName';
   static const String sellerVerified = 'sellerVerified';
