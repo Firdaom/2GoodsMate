@@ -34,288 +34,279 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     widget.onWatchlistToggle();
   }
 
+  //ฟังก์ชัน build หลัก 
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // ── Hero image ─────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            backgroundColor: AppTheme.background,
-            elevation: 0,
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.arrow_back,
-                  color: AppTheme.textPrimary,
-                  size: 20,
-                ),
-              ),
-            ),
-            actions: [
-              GestureDetector(
-                onTap: _toggle,
-                child: Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    _watchlisted ? Icons.favorite : Icons.favorite_border,
-                    color: _watchlisted ? AppTheme.heart : AppTheme.textMuted,
-                    size: 20,
-                  ),
-                ),
-              ),
-              // Report button
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ReportItemScreen(item: item),
-                    ),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.flag_outlined,
-                    color: AppTheme.textMuted,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: ImageCarousel(
-                imageUrls: item.imageUrls,
-                height: 280,
-              ),
-            ),
-          ),
-
-          // ── Content ────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    item.title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${item.series} • ${item.category} • Posted ${_timeAgo(item.postedAt)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              '👤',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              item.sellerName,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (item.sellerVerified) ...[
-                              const SizedBox(width: 5),
-                              const VerifiedBadge(size: 14),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Price + Condition cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _InfoCard(
-                          label: 'PRICE',
-                          child: Text(
-                            '฿${_fmt(item.price)}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.accent,
-                            ),
-                          ),
-                          accent: true,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _InfoCard(
-                          label: 'CONDITION',
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      color: conditionColor(item.condition),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    item.condition,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              RarityBadge(rarity: item.rarity),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Description
-                  const _Label('DESCRIPTION'),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Tags
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: item.tags
-                        .map(
-                          (tag) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentLight,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: AppTheme.accent.withOpacity(0.2),
-                              ),
-                            ),
-                            child: Text(
-                              '#$tag',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppTheme.accent,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-
-                  // Contact
-                  if (item.contactLinks.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    const _Label('CONTACT SELLER'),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: item.contactLinks
-                          .map(
-                            (link) => ContactButton(
-                              link: link,
-                              onTap: () {},
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+          _buildHeroImage(item), // ดึงส่วนรูปภาพมาแสดง
+          _buildItemDetails(item), // ดึงส่วนรายละเอียดมาแสดง
         ],
       ),
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  // ส่วนที่ 1: ส่วนรูปภาพด้านบน (SliverAppBar)
+  // ══════════════════════════════════════════════════════════
+  Widget _buildHeroImage(ItemModel item) {
+    return SliverAppBar(
+      expandedHeight: 280,
+      pinned: true,
+      backgroundColor: AppTheme.background,
+      elevation: 0,
+      leading: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8),
+            ],
+          ),
+          child: const Icon(
+            Icons.arrow_back,
+            color: AppTheme.textPrimary,
+            size: 20,
+          ),
+        ),
+      ),
+      actions: [
+        GestureDetector(
+          onTap: _toggle,
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8),
+              ],
+            ),
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              _watchlisted ? Icons.favorite : Icons.favorite_border,
+              color: _watchlisted ? AppTheme.heart : AppTheme.textMuted,
+              size: 20,
+            ),
+          ),
+        ),
+        // Report button
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ReportItemScreen(item: item)),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8),
+              ],
+            ),
+            padding: const EdgeInsets.all(8),
+            child: const Icon(
+              Icons.flag_outlined,
+              color: AppTheme.textMuted,
+              size: 20,
+            ),
+          ),
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: ImageCarousel(imageUrls: item.imageUrls, height: 280),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // ส่วนที่ 2: ส่วนรายละเอียดด้านล่าง (Content)
+  // ══════════════════════════════════════════════════════════
+  Widget _buildItemDetails(ItemModel item) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title
+            Text(
+              item.title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${item.series} • ${item.category} • Posted ${_timeAgo(item.postedAt)}',
+              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('👤', style: TextStyle(fontSize: 12)),
+                      const SizedBox(width: 6),
+                      Text(
+                        item.sellerName,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (item.sellerVerified) ...[
+                        const SizedBox(width: 5),
+                        const VerifiedBadge(size: 14),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Price + Condition cards
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoCard(
+                    label: 'PRICE',
+                    child: Text(
+                      '฿${_fmt(item.price)}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.accent,
+                      ),
+                    ),
+                    accent: true,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _InfoCard(
+                    label: 'CONDITION',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: conditionColor(item.condition),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              item.condition,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        RarityBadge(rarity: item.rarity),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            const _Label('DESCRIPTION'),
+            const SizedBox(height: 6),
+            Text(
+              item.description,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Tags
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: item.tags
+                  .map(
+                    (tag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentLight,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.accent.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+
+            // Contact
+            if (item.contactLinks.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              const _Label('CONTACT SELLER'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: item.contactLinks
+                    .map((link) => ContactButton(link: link, onTap: () {}))
+                    .toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  //  Format ราคาและเวลา 
   String _fmt(double price) => price
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');

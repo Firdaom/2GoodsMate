@@ -241,7 +241,7 @@ class VerifiedBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: const BoxDecoration(
-        color: Color(0xFF1DA1F2), // Instagram/Twitter blue
+        color: AppTheme.verified, 
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -509,26 +509,6 @@ class CategoryChip extends StatelessWidget {
   }
 }
 
-// ─── Section Header ───────────────────────────────────────
-class SectionHeader extends StatelessWidget {
-  final String title;
-  const SectionHeader({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        title.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 11, fontWeight: FontWeight.w700,
-          color: AppTheme.textMuted, letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-}
-
 // ─── Contact Button ───────────────────────────────────────
 class ContactButton extends StatelessWidget {
   final ContactLink link;
@@ -637,5 +617,65 @@ class ContactButton extends StatelessWidget {
       ),
     );
   }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// SHARED UI COMPONENTS (ใช้ได้ทุกหน้า)
+// ══════════════════════════════════════════════════════════
+
+class EmptyState extends StatelessWidget {
+  final String emoji;
+  final String title;
+  final String subtitle;
+
+  const EmptyState({
+    super.key,
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 40)),
+        const SizedBox(height: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textMuted,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+        ),
+      ],
+    ),
+  );
+}
+
+class SectionLabel extends StatelessWidget {
+  final String text;
+  
+  const SectionLabel(this.text, {super.key});
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: AppTheme.textMuted,
+      letterSpacing: 0.8,
+    ),
+  );
 }
 

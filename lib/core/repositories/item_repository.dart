@@ -1,3 +1,4 @@
+import 'package:anigoods/core/exceptions/app_exception.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/models/item_model.dart';
@@ -59,7 +60,7 @@ class ItemRepository {
     }
 
     // Create item model
-    final item = ItemModel(
+    var item = ItemModel(
       id: docRef.id,
       title: title,
       series: series,
@@ -75,19 +76,40 @@ class ItemRepository {
       tags: tags,
       contactLinks: contactLinks,
       postedAt: DateTime.now(),
-      moderationStatus: ModerationStatus.pending,
-      qualityScore: 0,
-      reportCount: null,
+      moderationStatus: ModerationStatus.pending, 
+      qualityScore: 0, 
+      reportCount: 0,
       flaggedAt: null,
     );
 
-    // Save to Firestore
+    // 2. 🧠 ให้ ModerationService ตรวจสอบและให้คะแนน
+    final modResult = await ModerationService.checkItem(item);
+    final score = ModerationService.calculateQualityScore(item);
+
+    // 3. 🚨 ถ้าตรวจพบคำหยาบ/สแปมรุนแรง (Rejected) ให้เด้ง Error กลับไปที่หน้าจอเลย!
+    if (modResult.status == ModerationStatus.rejected) {
+      // (อย่าลืม import AppException มาใช้ในไฟล์นี้ด้วยนะครับ ถ้ายังไม่มี)
+      throw AppException(
+        message: modResult.reason ?? 'Item rejected by moderation system.',
+        code: 'moderation-rejected',
+      );
+    }
+
+    // 4. อัปเดต Model ด้วยสถานะและคะแนนที่ตรวจเสร็จแล้ว
+    item = item.copyWith(
+      moderationStatus: modResult.status,
+      qualityScore: score,
+    );
+
+    // 5. 💾 Save to Firestore (เซฟของที่ผ่านการตรวจแล้วเท่านั้น)
     await docRef
         .set(item.toFirestore())
         .timeout(
           AppConstants.firestoreSaveTimeout,
           onTimeout: () => throw Exception('Failed to save item'),
         );
+
+    return docRef.id;
 
     return docRef.id;
   }

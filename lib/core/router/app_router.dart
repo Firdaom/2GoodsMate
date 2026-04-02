@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:anigoods/features/auth/screens/login_screen.dart';
 import 'package:anigoods/features/auth/screens/register_screen.dart';
 import 'package:anigoods/features/auth/screens/verify_email_screen.dart';
@@ -9,6 +10,7 @@ import 'package:anigoods/features/profile/screens/profile_screen.dart';
 import 'package:anigoods/features/splash/screens/splash_screen.dart';
 import 'package:anigoods/features/landing/screens/landing_screen.dart';
 import 'package:anigoods/core/widgets/main_shell.dart';
+import 'dart:async';
 
 // Enum for route NAMES — used with context.goNamed() / context.pushNamed()
 enum RouteNames {
@@ -50,6 +52,7 @@ enum RouteNames {
 final appRouter = GoRouter(
   initialLocation: RouteNames.splash.path,
   debugLogDiagnostics: true, // Remove in production
+  refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
   redirect: (context, state) {
     // Check if user is logged in
     final isLoggedIn = FirebaseAuth.instance.currentUser != null;
@@ -66,14 +69,15 @@ final appRouter = GoRouter(
       return null;
     }
 
-    // If not logged in, allow landing, login & register pages
+    // ถ้ายังไม่ได้ล็อกอิน
     if (!isLoggedIn) {
-      // Allow access to landing, login and register pages
-      if (isLanding || isLoggingIn || isRegistering) {
-        return null;
-      }
-      // Redirect to landing for any other page
-      return RouteNames.landing.path;
+      // หน้าที่อนุญาตให้คนไม่ล็อกอินเข้าได้
+      final isAuthPage = isLanding || isLoggingIn || isRegistering || isSplash;
+      
+      // ถ้าพยายามเข้าหน้าอื่น (เช่น /home) ให้เตะกลับไปหน้า login
+      if (!isAuthPage) return RouteNames.login.path; // หรือ landing.path ก็ได้ครับ
+      
+      return null;
     }
 
     // ✅ Email verification disabled temporarily
@@ -150,3 +154,21 @@ final appRouter = GoRouter(
     ),
   ],
 );
+
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+      (dynamic _) => notifyListeners(),
+    );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}

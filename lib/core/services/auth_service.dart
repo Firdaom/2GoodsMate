@@ -44,7 +44,7 @@ class AuthService {
 
       // Check if user profile exists, if not create it
       final userDoc = await _firestore
-          .collection('users')
+          .collection(FirebaseCollections.users)
           .doc(credential.user!.uid)
           .get();
 

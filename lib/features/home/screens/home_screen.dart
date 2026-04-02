@@ -8,11 +8,17 @@ import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:anigoods/core/constants/app_constants.dart';
 import 'package:anigoods/features/home/repositories/home_repository.dart';
+import 'dart:async'; //timer
 
-
-
-const List<String> kCategories = ['All','Figures','Cards','Manga','Merchandise','Vinyl'];
-const List<String> kRarities   = ['All','Limited','Rare','Common'];
+const List<String> kCategories = [
+  'All',
+  'Figures',
+  'Cards',
+  'Manga',
+  'Merchandise',
+  'Vinyl',
+];
+const List<String> kRarities = ['All', 'Limited', 'Rare', 'Common'];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,9 +29,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
-  String _query    = '';
+  String _query = '';
+  Timer? _debounce;
   String _category = 'All';
-  String _rarity   = 'All';
+  String _rarity = 'All';
 
   @override
   void initState() {
@@ -34,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -56,12 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<ItemModel> _filter(List<ItemModel> items) => items.where((item) {
-        final q = _query.toLowerCase();
-        final matchQ   = q.isEmpty || item.matchesQuery(q);
-        final matchCat = _category == 'All' || item.category == _category;
-        final matchRar = _rarity   == 'All' || item.rarity   == _rarity;
-        return matchQ && matchCat && matchRar;
-      }).toList();
+    final q = _query.toLowerCase();
+    final matchQ = q.isEmpty || item.matchesQuery(q);
+    final matchCat = _category == 'All' || item.category == _category;
+    final matchRar = _rarity == 'All' || item.rarity == _rarity;
+    return matchQ && matchCat && matchRar;
+  }).toList();
 
   Widget _renderItems(List<ItemModel> items, List<String> watchlist) {
     return Column(
@@ -72,8 +80,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text(
             '${items.length} ITEM${items.length != 1 ? "S" : ""} FOUND',
             style: const TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w600,
-              color: AppTheme.textMuted, letterSpacing: 0.4,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textMuted,
+              letterSpacing: 0.4,
             ),
           ),
         ),
@@ -83,15 +93,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ? const Center(
                   child: Text(
                     'No items match your search.',
-                    style: TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 13),
+                    style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
                   ),
                 )
               : ListView.builder(
                   key: PageStorageKey<String>('home_items'),
-                  padding: const EdgeInsets.fromLTRB(
-                      20, 0, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   itemCount: items.length,
                   itemBuilder: (_, i) => ItemCard(
                     key: ValueKey(items[i].id),
@@ -108,8 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    onWatchlistToggle: () =>
-                        _toggleWatchlist(items[i].id),
+                    onWatchlistToggle: () => _toggleWatchlist(items[i].id),
                   ),
                 ),
         ),
@@ -122,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       backgroundColor: AppTheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
         child: Column(
@@ -131,7 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Center(
               child: Container(
-                width: 36, height: 3,
+                width: 36,
+                height: 3,
                 decoration: BoxDecoration(
                   color: AppTheme.border,
                   borderRadius: BorderRadius.circular(2),
@@ -139,23 +147,31 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Filter by Rarity',
-                style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                )),
+            const Text(
+              'Filter by Rarity',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 12),
-            ...kRarities.map((rarity) => GestureDetector(
-              onTap: () { setState(() => _rarity = rarity); Navigator.pop(context); },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                decoration: const BoxDecoration(
-                    border: Border(
-                        bottom: BorderSide(color: AppTheme.border))),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(rarity,
+            ...kRarities.map(
+              (rarity) => GestureDetector(
+                onTap: () {
+                  setState(() => _rarity = rarity);
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppTheme.border)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        rarity,
                         style: TextStyle(
                           fontSize: 14,
                           color: _rarity == rarity
@@ -164,14 +180,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontWeight: _rarity == rarity
                               ? FontWeight.w700
                               : FontWeight.w500,
-                        )),
-                    if (_rarity == rarity)
-                      const Icon(Icons.check,
-                          color: AppTheme.accent, size: 18),
-                  ],
+                        ),
+                      ),
+                      if (_rarity == rarity)
+                        const Icon(
+                          Icons.check,
+                          color: AppTheme.accent,
+                          size: 18,
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -189,15 +210,24 @@ class _HomeScreenState extends State<HomeScreen> {
           text: const TextSpan(
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             children: [
-              TextSpan(text: '2Goods',
-                  style: TextStyle(color: AppTheme.textPrimary)),
-              TextSpan(text: 'Mate',
-                  style: TextStyle(color: AppTheme.accent)),
+              TextSpan(
+                text: '2Goods',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              TextSpan(
+                text: 'Mate',
+                style: TextStyle(color: AppTheme.accent),
+              ),
             ],
           ),
         ),
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationKeywordsScreen())),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const NotificationKeywordsScreen(),
+            ),
+          ),
           child: const Text('🔔', style: TextStyle(fontSize: 22)),
         ),
       ],
@@ -219,24 +249,24 @@ class _HomeScreenState extends State<HomeScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 8, offset: const Offset(0, 2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
           const SizedBox(width: 14),
-          Icon(Icons.search,
-              color: _query.isNotEmpty
-                  ? AppTheme.accent
-                  : AppTheme.textMuted,
-              size: 18),
+          Icon(
+            Icons.search,
+            color: _query.isNotEmpty ? AppTheme.accent : AppTheme.textMuted,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary, fontSize: 13),
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
               decoration: const InputDecoration(
                 hintText: 'Search figures, cards, manga...',
                 border: InputBorder.none,
@@ -245,19 +275,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 fillColor: Colors.transparent,
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
               ),
-              onChanged: (v) => setState(() => _query = v),
+              onChanged: (v) {
+                if (_debounce?.isActive ?? false)
+                  _debounce!.cancel(); // ถ้านาฬิกาเดินอยู่ ให้ยกเลิกก่อน
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  // ตั้งเวลา(ครึ่งวินาที)
+                  setState(() => _query = v); // พอครบเวลา ค่อยสั่งอัปเดตหน้าจอ
+                });
+              },
             ),
           ),
           if (_query.isNotEmpty)
             GestureDetector(
               onTap: () {
+                _debounce?.cancel(); // ถ้ายกเลิกค้นหา ให้หยุดนาฬิกาด้วย
                 _searchCtrl.clear();
                 setState(() => _query = '');
               },
               child: const Padding(
                 padding: EdgeInsets.only(right: 14),
-                child: Icon(Icons.close,
-                    color: AppTheme.textMuted, size: 16),
+                child: Icon(Icons.close, color: AppTheme.textMuted, size: 16),
               ),
             ),
         ],
@@ -278,77 +315,112 @@ class _HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _rarity != 'All'
-                  ? AppTheme.accent
-                  : AppTheme.surface,
+              color: _rarity != 'All' ? AppTheme.accent : AppTheme.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: _rarity != 'All'
-                    ? AppTheme.accent
-                    : AppTheme.border,
+                color: _rarity != 'All' ? AppTheme.accent : AppTheme.border,
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.filter_list,
-                    size: 14,
+                Icon(
+                  Icons.filter_list,
+                  size: 14,
+                  color: _rarity != 'All'
+                      ? Colors.white
+                      : AppTheme.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Rarity',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     color: _rarity != 'All'
                         ? Colors.white
-                        : AppTheme.textSecondary),
-                const SizedBox(width: 4),
-                Text('Rarity',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _rarity != 'All'
-                          ? Colors.white
-                          : AppTheme.textSecondary,
-                    )),
+                        : AppTheme.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
         ),
-        ...kCategories.map((cat) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: CategoryChip(
-                label: cat,
-                selected: _category == cat,
-                onTap: () => setState(() => _category = cat),
-              ),
-            )),
+        ...kCategories.map(
+          (cat) => Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: CategoryChip(
+              label: cat,
+              selected: _category == cat,
+              onTap: () => setState(() => _category = cat),
+            ),
+          ),
+        ),
       ],
     ),
   );
 
+  // ฟังก์ชันสำหรับสร้างคำสั่งดึงข้อมูลจาก Firebase อย่างประหยัด
+  Query _buildFirestoreQuery() {
+    Query query = FirebaseFirestore.instance.collection(
+      FirebaseCollections.items,
+    );
+
+    // ถ้าไม่ได้เลือก All ให้ฐานข้อมูลกรอง Category มาให้เลย
+    if (_category != 'All') {
+      query = query.where('category', isEqualTo: _category);
+    }
+
+    // ถ้าไม่ได้เลือก All ให้ฐานข้อมูลกรอง Rarity มาให้เลย
+    if (_rarity != 'All') {
+      query = query.where('rarity', isEqualTo: _rarity);
+    }
+
+    // เรียงลำดับจากของใหม่ไปเก่า
+    return query.orderBy(ItemFields.postedAt, descending: true);
+  }
+
   /// Build items list with stream and filter
   Widget _buildItemsList() => Expanded(
     child: StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection(FirebaseCollections.items)
-          .orderBy(ItemFields.postedAt, descending: true)
-          .snapshots(),
+      stream: _buildFirestoreQuery().snapshots(), //  เรียกใช้ Query ที่กรองแล้ว
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(color: AppTheme.accent));
+            child: CircularProgressIndicator(color: AppTheme.accent),
+          );
         }
-        final all = snapshot.data?.docs
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        // แปลงข้อมูลจาก Firebase เป็น ItemModel
+        final all =
+            snapshot.data?.docs
                 .map((doc) => ItemModel.fromFirestore(doc))
                 .toList() ??
             [];
-        final items = _filter(all);
+
+        //  ให้มือถือกรองเฉพาะ "คำค้นหา (Search)" ต่ออีกชั้นนึง
+        final items = _query.isEmpty
+            ? all
+            : all
+                  .where((item) => item.matchesQuery(_query.toLowerCase()))
+                  .toList();
 
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid == null) return _renderItems(items, []);
 
+        // ดึงข้อมูล Watchlist
         return StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection(FirebaseCollections.users)
               .doc(uid)
               .snapshots(),
           builder: (context, userSnapshot) {
-            final watchlist = userSnapshot.data
-                    ?.get(UserFields.watchlist) as List<dynamic>? ??
+            final watchlist =
+                userSnapshot.data?.get(UserFields.watchlist)
+                    as List<dynamic>? ??
                 [];
             final watchlistIds = List<String>.from(watchlist.cast<String>());
             return _renderItems(items, watchlistIds);

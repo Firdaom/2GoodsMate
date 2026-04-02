@@ -119,8 +119,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 28),
 
-              const SectionHeader(title: 'Account'),
-              const SizedBox(height: 4),
+              const SectionLabel( 'ACCOUNT'),
+              const SizedBox(height: 8),
               SettingsRow(
                 emoji: '👤',
                 label: 'Personal Information',

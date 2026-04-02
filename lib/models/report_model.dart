@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:anigoods/core/constants/app_constants.dart';
 
 enum ReportReason {
   fakeItem,
@@ -60,32 +61,32 @@ class ReportModel {
     final d = doc.data() as Map<String, dynamic>;
     return ReportModel(
       id: doc.id,
-      itemId: d['itemId'] ?? '',
-      itemTitle: d['itemTitle'] ?? '',
-      reporterId: d['reporterId'] ?? '',
-      reporterName: d['reporterName'] ?? '',
+      itemId: d[ReportFields.itemId] ?? '',
+      itemTitle: d[ReportFields.itemTitle] ?? '',
+      reporterId: d[ReportFields.reporterId] ?? '',
+      reporterName: d[ReportFields.reporterName] ?? '',
       reason: ReportReason.values.firstWhere(
-        (e) => e.name == d['reason'],
+        (e) => e.name == d[ReportFields.reason],
         orElse: () => ReportReason.other,
       ),
-      additionalInfo: d['additionalInfo'],
-      evidenceUrls: List<String>.from(d['evidenceUrls'] ?? []),
-      createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      reviewed: d['reviewed'] ?? false,
-      adminNote: d['adminNote'],
+      additionalInfo: d[ReportFields.additionalInfo],
+      evidenceUrls: List<String>.from(d[ReportFields.evidenceUrls] ?? []),
+      createdAt: (d[ReportFields.createdAt] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reviewed: d[ReportFields.reviewed] ?? false,
+      adminNote: d[ReportFields.adminNote],
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-        'itemId': itemId,
-        'itemTitle': itemTitle,
-        'reporterId': reporterId,
-        'reporterName': reporterName,
-        'reason': reason.name,
-        'additionalInfo': additionalInfo,
-        'evidenceUrls': evidenceUrls,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'reviewed': reviewed,
-        'adminNote': adminNote,
+        ReportFields.itemId: itemId,
+        ReportFields.itemTitle: itemTitle,
+        ReportFields.reporterId: reporterId,
+        ReportFields.reporterName: reporterName,
+        ReportFields.reason: reason.name,
+        ReportFields.additionalInfo: additionalInfo,
+        ReportFields.evidenceUrls: evidenceUrls,
+        ReportFields.createdAt: Timestamp.fromDate(createdAt),
+        ReportFields.reviewed: reviewed,
+        ReportFields.adminNote: adminNote,
       };
 }

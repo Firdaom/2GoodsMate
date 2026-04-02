@@ -27,6 +27,7 @@ class AppTheme {
   static const Color condNew      = Color(0xFF4ADE80);
   static const Color condLikeNew  = Color(0xFF60A5FA);
   static const Color condGood     = Color(0xFFFBBF24);
+  static const Color verified = Color(0xFF1DA1F2);
 
   // ─── Rarity ───────────────────────────────────────────────
   static const Color rarityLimited = Color(0xFFFBBF24);

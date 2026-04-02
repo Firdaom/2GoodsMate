@@ -20,22 +20,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final doc = await FirebaseFirestore.instance
+    await FirebaseFirestore.instance
         .collection(FirebaseCollections.users)
         .doc(uid)
-        .get();
-
-    if (doc.exists) {
-      final currentWatchlist = List<String>.from(
-        doc[UserFields.watchlist] ?? [],
-      );
-      final updated = currentWatchlist.where((id) => id != itemId).toList();
-
-      await FirebaseFirestore.instance
-          .collection(FirebaseCollections.users)
-          .doc(uid)
-          .update({UserFields.watchlist: updated});
-    }
+        .update({
+          UserFields.watchlist: FieldValue.arrayRemove([itemId])
+        });
   }
 
   @override
@@ -56,7 +46,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'watchlist',
+                    'Watchlist',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -88,7 +78,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   }
 
                   if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                    return const _EmptyState(
+                    return const EmptyState(
                       emoji: '🔖',
                       title: 'No items yet',
                       subtitle: 'Tap the heart on items\nto save them here',
@@ -100,7 +90,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   );
 
                   if (watchlist.isEmpty) {
-                    return const _EmptyState(
+                    return const EmptyState(
                       emoji: '🔖',
                       title: 'No items yet',
                       subtitle: 'Tap the heart on items\nto save them here',
@@ -130,7 +120,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                           [];
 
                       if (items.isEmpty) {
-                        return const _EmptyState(
+                        return const EmptyState(
                           emoji: '🔖',
                           title: 'No items yet',
                           subtitle: 'Tap the heart on items\nto save them here',
@@ -172,265 +162,5 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   }
 }
 
-// ════════════════════════════════════════════════════════
-// notification_keywords_screen.dart
-// ════════════════════════════════════════════════════════
 
-class NotificationKeywordsScreen extends StatefulWidget {
-  const NotificationKeywordsScreen({super.key});
-  @override
-  State<NotificationKeywordsScreen> createState() =>
-      _NotificationKeywordsScreenState();
-}
 
-class _NotificationKeywordsScreenState
-    extends State<NotificationKeywordsScreen> {
-  final _ctrl = TextEditingController();
-  List<String> _keywords = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final doc = await FirebaseFirestore.instance
-        .collection(FirebaseCollections.users)
-        .doc(uid)
-        .get();
-    if (doc.exists && mounted)
-      setState(
-        () => _keywords = List<String>.from(
-          doc[UserFields.notificationKeywords] ?? [],
-        ),
-      );
-  }
-
-  Future<void> _save() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    await FirebaseFirestore.instance
-        .collection(FirebaseCollections.users)
-        .doc(uid)
-        .update({UserFields.notificationKeywords: _keywords});
-  }
-
-  void _add() {
-    final kw = _ctrl.text.trim();
-    if (kw.isEmpty) return;
-    setState(() => _keywords.add(kw));
-    _ctrl.clear();
-    _save();
-  }
-
-  void _remove(int i) {
-    setState(() => _keywords.removeAt(i));
-    _save();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Keyword Alerts'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.accentLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '💡 How it works',
-                    style: TextStyle(
-                      color: AppTheme.accent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Add keywords and get notified when new matching items are listed!',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const _SectionLabel('ADD NEW KEYWORD'),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _ctrl,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'e.g., Haikyu, Naruto...',
-                    ),
-                    onSubmitted: (_) => _add(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _add,
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppTheme.accent, AppTheme.accentDark],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _SectionLabel('YOUR KEYWORDS (${_keywords.length})'),
-            const SizedBox(height: 8),
-            Expanded(
-              child: _keywords.isEmpty
-                  ? const _EmptyState(
-                      emoji: '🔍',
-                      title: 'No keywords yet',
-                      subtitle: 'Add keywords to start tracking',
-                    )
-                  : ListView.separated(
-                      itemCount: _keywords.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          children: [
-                            const Text('🔔', style: TextStyle(fontSize: 16)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _keywords[i],
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.textPrimary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _remove(i),
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.danger.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppTheme.danger.withOpacity(0.2),
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    '×',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.danger,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════
-// Shared helpers
-// ════════════════════════════════════════════════════════
-class _EmptyState extends StatelessWidget {
-  final String emoji, title, subtitle;
-  const _EmptyState({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-  });
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 40)),
-        const SizedBox(height: 12),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textMuted,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-        ),
-      ],
-    ),
-  );
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
-  @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      color: AppTheme.textMuted,
-      letterSpacing: 0.8,
-    ),
-  );
-}

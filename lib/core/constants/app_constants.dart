@@ -17,6 +17,8 @@ class AppConstants {
 
 /// Firestore collection names
 class FirebaseCollections {
+  FirebaseCollections._(); // Private constructor to prevent instantiation
+  
   static const String users = 'users';
   static const String items = 'items';
   static const String reports = 'reports';
@@ -24,6 +26,8 @@ class FirebaseCollections {
 
 /// Firestore field names for User collection
 class UserFields {
+  UserFields._(); // Private constructor to prevent instantiation
+
   static const String name = 'name';
   static const String username = 'username';
   static const String email = 'email';
@@ -37,6 +41,8 @@ class UserFields {
 
 /// Firestore field names for Item collection
 class ItemFields {
+  ItemFields._(); // Private constructor to prevent instantiation
+
   static const String title = 'title';
   static const String series = 'series';
   static const String category = 'category';
@@ -60,6 +66,8 @@ class ItemFields {
 
 /// Firebase Auth error codes
 class AuthErrorCodes {
+  AuthErrorCodes._(); // Private constructor to prevent instantiation
+
   static const String userNotFound = 'user-not-found';
   static const String wrongPassword = 'wrong-password';
   static const String invalidCredential = 'invalid-credential';
@@ -71,6 +79,24 @@ class AuthErrorCodes {
 
 /// Firebase Storage paths
 class StoragePaths {
+  StoragePaths._(); // Private constructor to prevent instantiation
+
   static const String itemImages = 'items';
   static const String profileImages = 'profile_images';
+}
+
+/// Firestore field names for Report collection
+class ReportFields {
+  ReportFields._(); // Private constructor to prevent instantiation
+  
+  static const String itemId = 'itemId';
+  static const String itemTitle = 'itemTitle';
+  static const String reporterId = 'reporterId';
+  static const String reporterName = 'reporterName';
+  static const String reason = 'reason';
+  static const String additionalInfo = 'additionalInfo';
+  static const String evidenceUrls = 'evidenceUrls';
+  static const String createdAt = 'createdAt';
+  static const String reviewed = 'reviewed';
+  static const String adminNote = 'adminNote';
 }

@@ -4,6 +4,7 @@ import 'package:anigoods/features/profile/repositories/user_repository.dart';
 import 'package:anigoods/features/profile/repositories/profile_repository.dart';
 import 'package:anigoods/features/home/repositories/home_repository.dart';
 import 'package:anigoods/features/watchlist/repositories/watchlist_repository.dart';
+import 'package:anigoods/core/repositories/item_repository.dart';
 
 // ✅ ให้ repositories พร้อมใช้ทั่ว app
 final authRepositoryProvider = Provider((ref) {
@@ -24,4 +25,9 @@ final homeRepositoryProvider = Provider((ref) {
 
 final watchlistRepositoryProvider = Provider((ref) {
   return WatchlistRepository();
+});
+
+// Item Repository 
+final itemRepositoryProvider = Provider((ref) {
+  return ItemRepository();
 });

@@ -8,7 +8,6 @@ import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/core/services/auth_service.dart';
 
-
 // ══════════════════════════════════════════════════════════
 // REGISTER SCREEN
 // ══════════════════════════════════════════════════════════
@@ -19,10 +18,13 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // 1. เพิ่มแฟ้มหนีบเอกสาร
+  final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl  = TextEditingController();
+  
   bool _loading  = false;
   bool _obscure1 = true;
   bool _obscure2 = true;
@@ -36,36 +38,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  bool get _passwordsMatch =>
-      _confirmCtrl.text.isEmpty || _passwordCtrl.text == _confirmCtrl.text;
-
-  bool get _canSubmit =>
-      _emailCtrl.text.isNotEmpty &&
-      _passwordCtrl.text.isNotEmpty &&
-      _passwordCtrl.text.length >= 8 &&
-      _confirmCtrl.text.isNotEmpty &&
-      _passwordCtrl.text == _confirmCtrl.text;
+  // 🗑️ ลบตัวแปร _passwordsMatch และ _canSubmit ทิ้งไปได้เลย! แฟ้มเอกสารจะจัดการเอง
 
   Future<void> _register() async {
-  if (!_canSubmit) return;
-  setState(() { _loading = true; _error = null; });
-  try {
-    // Create Firebase Auth account
-    final credential = await _authService.registerWithEmail(
-      email: _emailCtrl.text.trim(),
-      password: _passwordCtrl.text,
-    );
-
-    if (mounted) {
-      context.go(RouteNames.home.path);
+    // 2. สั่งให้แฟ้มตรวจเอกสารก่อน ถ้าช่องไหนไม่ผ่านให้หยุดทำงาน
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
-  } catch (e) {
-    ErrorHandler.logError('register_screen._register()', e);
-    setState(() => _error = ErrorHandler.getUserMessage(e));
-  } finally {
-    if (mounted) setState(() => _loading = false);
+
+    setState(() { _loading = true; _error = null; });
+    try {
+      // Create Firebase Auth account
+      final credential = await _authService.registerWithEmail(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
+
+      if (mounted) {
+        context.go(RouteNames.home.path);
+      }
+    } catch (e) {
+      ErrorHandler.logError('register_screen._register()', e);
+      setState(() => _error = ErrorHandler.getUserMessage(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -73,87 +71,118 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            children: [
-              const SizedBox(height: 60),
-              _Logo(subtitle: 'Join the collector community'),
-              const SizedBox(height: 40),
+          // 3. เอา Form มาครอบไว้
+          child: Form(
+            key: _formKey, // 👈 หนีบแฟ้มไว้ตรงนี้
+            child: Column(
+              children: [
+                const SizedBox(height: 60),
+                const _Logo(subtitle: 'Join the collector community'),
+                const SizedBox(height: 40),
 
-              _FieldLabel('Email'),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(hintText: 'your@email.com'),
-              ),
-              const SizedBox(height: 16),
-
-              _FieldLabel('Password'),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _passwordCtrl,
-                obscureText: _obscure1,
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: 'Min. 8 characters',
-                  errorText: _passwordCtrl.text.isNotEmpty && _passwordCtrl.text.length < 8 ? 'Min. 8 characters required' : null,
-                  errorStyle: const TextStyle(color: AppTheme.danger, fontSize: 11),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscure1 ? Icons.visibility_off : Icons.visibility,
-                        color: AppTheme.textMuted, size: 18),
-                    onPressed: () => setState(() => _obscure1 = !_obscure1),
-                  ),
+                _FieldLabel('Email'),
+                const SizedBox(height: 6),
+                // 4. เปลี่ยนเป็น TextFormField
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                  decoration: const InputDecoration(hintText: 'your@email.com'),
+                  // ใส่ Validator เช็คอีเมล
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              _FieldLabel('Confirm Password'),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _confirmCtrl,
-                obscureText: _obscure2,
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (_) => _register(),
-                decoration: InputDecoration(
-                  hintText: 'Repeat password',
-                  errorText: _passwordsMatch ? null : 'Passwords do not match',
-                  errorStyle: const TextStyle(color: AppTheme.danger, fontSize: 11),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscure2 ? Icons.visibility_off : Icons.visibility,
-                        color: AppTheme.textMuted, size: 18),
-                    onPressed: () => setState(() => _obscure2 = !_obscure2),
+                _FieldLabel('Password'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _passwordCtrl,
+                  obscureText: _obscure1,
+                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Min. 8 characters',
+                    // ลบ errorText แบบเก่าทิ้งไปเลย
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscure1 ? Icons.visibility_off : Icons.visibility,
+                          color: AppTheme.textMuted, size: 18),
+                      onPressed: () => setState(() => _obscure1 = !_obscure1), // setState ตรงนี้ยังต้องมี เพื่อสลับไอคอนรูปตา
+                    ),
                   ),
+                  // ใส่ Validator เช็ครหัสผ่าน
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    if (value.length < 8) {
+                      return 'Min. 8 characters required';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-              if (_error != null) ...[
-                Text(_error!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
-                const SizedBox(height: 12),
+                _FieldLabel('Confirm Password'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _confirmCtrl,
+                  obscureText: _obscure2,
+                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                  onFieldSubmitted: (_) => _register(), // เปลี่ยนจาก onSubmitted เป็น onFieldSubmitted
+                  decoration: InputDecoration(
+                    hintText: 'Repeat password',
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscure2 ? Icons.visibility_off : Icons.visibility,
+                          color: AppTheme.textMuted, size: 18),
+                      onPressed: () => setState(() => _obscure2 = !_obscure2),
+                    ),
+                  ),
+                  // ใส่ Validator เช็คว่ารหัสตรงกันไหม
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != _passwordCtrl.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // สำหรับโชว์ Error จาก Firebase (เช่น อีเมลซ้ำ)
+                if (_error != null) ...[
+                  Text(_error!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
+                  const SizedBox(height: 12),
+                ],
+
+                PrimaryButton(
+                  label: 'Create Account',
+                  // 5. ปุ่มกดได้เสมอ ไม่ต้องเช็ค _canSubmit แล้ว
+                  onTap: _loading ? null : _register,
+                  loading: _loading,
+                ),
+                const SizedBox(height: 20),
+
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Text('Already have an account? ',
+                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  GestureDetector(
+                    onTap: () => context.go('/login'),
+                    child: const Text('Sign In',
+                        style: TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+                const SizedBox(height: 24),
               ],
-
-              PrimaryButton(
-                label: 'Create Account',
-                onTap: _canSubmit && !_loading ? _register : null,
-                loading: _loading,
-              ),
-              const SizedBox(height: 20),
-
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Text('Already have an account? ',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                GestureDetector(
-                  onTap: () => context.go('/login'),
-                  child: const Text('Sign In',
-                      style: TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w600)),
-                ),
-              ]),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
       ),
@@ -205,4 +234,3 @@ class _FieldLabel extends StatelessWidget {
         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textMuted, letterSpacing: 0.6)),
   );
 }
-

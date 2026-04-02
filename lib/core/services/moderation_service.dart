@@ -73,8 +73,6 @@ class ModerationService {
     'inbox',
     'dm me',
     'ส่งข้อความ',
-    'ไลน์',
-    'line:',
     'line id',
     'http://',
     'https://',
@@ -162,7 +160,7 @@ class ModerationService {
     // Image quality (30 points)
     if (item.imageUrls.isNotEmpty) score += 20;
     // ถ้ามีหลายรูป (ต้องเพิ่ม imageUrls field ใน ItemModel)
-    // if (item.imageUrls?.length >= 3) score += 10;
+    if (item.imageUrls.length >= 3) score += 10;
 
     // Description quality (30 points)
     if (item.description.length >= 100) score += 15;

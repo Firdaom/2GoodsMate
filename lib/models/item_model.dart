@@ -134,4 +134,48 @@ class ItemModel {
         series.toLowerCase().contains(lowercaseQuery) ||
         tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery));
   }
+
+  ItemModel copyWith({
+    String? id,
+    String? title,
+    String? series,
+    String? category,
+    String? rarity,
+    double? price,
+    String? condition,
+    List<String>? imageUrls,
+    String? sellerId,
+    String? sellerName,
+    bool? sellerVerified,
+    String? description,
+    List<String>? tags,
+    List<ContactLink>? contactLinks, 
+    DateTime? postedAt,
+    ModerationStatus? moderationStatus,
+    int? qualityScore,
+    int? reportCount,
+    DateTime? flaggedAt,
+  }) {
+    return ItemModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      series: series ?? this.series,
+      category: category ?? this.category,
+      rarity: rarity ?? this.rarity,
+      price: price ?? this.price,
+      condition: condition ?? this.condition,
+      imageUrls: imageUrls ?? this.imageUrls,
+      sellerId: sellerId ?? this.sellerId,
+      sellerName: sellerName ?? this.sellerName,
+      sellerVerified: sellerVerified ?? this.sellerVerified,
+      description: description ?? this.description,
+      tags: tags ?? this.tags,
+      contactLinks: contactLinks ?? this.contactLinks,
+      postedAt: postedAt ?? this.postedAt,
+      moderationStatus: moderationStatus ?? this.moderationStatus,
+      qualityScore: qualityScore ?? this.qualityScore,
+      reportCount: reportCount ?? this.reportCount,
+      flaggedAt: flaggedAt ?? this.flaggedAt,
+    );
+  }
 }
