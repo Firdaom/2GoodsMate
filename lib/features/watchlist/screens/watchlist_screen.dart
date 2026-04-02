@@ -56,10 +56,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddItemScreen()),
-                    ),
+                    onTap: () => context.push(RouteNames.addItem.path),
                     child: const Text('➕', style: TextStyle(fontSize: 24)),
                   ),
                 ],

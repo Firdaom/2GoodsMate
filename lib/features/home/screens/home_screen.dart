@@ -221,12 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const NotificationKeywordsScreen(),
-            ),
-          ),
+          onTap: () => appRouter.push(RouteNames.notifications.path),
           child: const Text('🔔', style: TextStyle(fontSize: 22)),
         ),
       ],

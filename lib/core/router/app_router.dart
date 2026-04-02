@@ -1,3 +1,5 @@
+import 'package:anigoods/features/add_item/screens/addItem_screen.dart';
+import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +35,8 @@ enum RouteNames {
   profile,
   itemDetail,
   editProfile, 
+  notifications,
+  addItem,
   settings;   
 
   // Helper getter
@@ -60,6 +64,10 @@ enum RouteNames {
         return '/settings';  
       case RouteNames.editProfile:
         return '/edit-profile';  
+      case RouteNames.notifications:
+        return '/notifications';
+      case RouteNames.addItem:
+        return '/add-item';
     }
   }
 }
@@ -121,8 +129,18 @@ final appRouter = GoRouter(
       name: RouteNames.verifyEmail.name,
       builder: (context, state) => const VerifyEmailScreen(),
     ),
-    
-    // หน้า Item Detail (ทับเต็มจอ)
+    GoRoute(
+      path: RouteNames.notifications.path,
+      name: RouteNames.notifications.name,
+      parentNavigatorKey: _rootNavigatorKey, 
+      builder: (context, state) => const NotificationKeywordsScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.addItem.path,
+      name: RouteNames.addItem.name,
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AddItemScreen(),
+    ),
     GoRoute(
       path: RouteNames.itemDetail.path,
       name: RouteNames.itemDetail.name,
