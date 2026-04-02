@@ -37,9 +37,22 @@ class _ImageCarouselState extends State<ImageCarousel> {
     super.dispose();
   }
 
+  // เรียกใช้ widget.imageUrls 
+  void _openFullScreen(BuildContext context, int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FullScreenImageViewer(
+          imageUrls: widget.imageUrls,
+          initialIndex: index,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ถ้าไม่มีรูปเลย แสดง fallback
+    // 1. ถ้าไม่มีรูปเลย แสดง fallback
     if (widget.imageUrls.isEmpty) {
       return Container(
         height: widget.height,
@@ -53,67 +66,74 @@ class _ImageCarouselState extends State<ImageCarousel> {
       );
     }
 
-    // ถ้ามีรูปเดียว แสดงรูปแบบธรรมดา ไม่มี carousel
+    // 2. ถ้ามีรูปเดียว แสดงรูปแบบธรรมดา ไม่มี carousel
     if (widget.imageUrls.length == 1) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        child: Container(
-          height: widget.height,
-          color: AppTheme.accentLight,
-          alignment: Alignment.center,
-          child: Image.network(
-            widget.imageUrls[0],
-            fit: BoxFit.contain,
-            width: double.infinity,
-            errorBuilder: (_, __, ___) => const Center(
-              child: Text('🎁', style: TextStyle(fontSize: 64)),
-            ),
-            loadingBuilder: (_, child, progress) => progress == null
-                ? child
-                : const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppTheme.accent,
+      return GestureDetector(
+        onTap: () => _openFullScreen(context, 0), // เปิดหน้าเต็มจอ
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          child: Container(
+            height: widget.height,
+            color: AppTheme.accentLight,
+            alignment: Alignment.center,
+            child: Image.network(
+              widget.imageUrls[0],
+              fit: BoxFit.contain,
+              width: double.infinity,
+              errorBuilder: (_, __, ___) => const Center(
+                child: Text('🎁', style: TextStyle(fontSize: 64)),
+              ),
+              loadingBuilder: (_, child, progress) => progress == null
+                  ? child
+                  : const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.accent,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       );
     }
 
-    // ถ้ามีหลายรูป แสดง carousel พร้อม indicator
+    // 3. ถ้ามีหลายรูป แสดง carousel พร้อม indicator
     return Stack(
       children: [
-        // PageView สำหรับเลื่อนรูป
         ClipRRect(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           child: SizedBox(
             height: widget.height,
             child: PageView.builder(
               controller: _pageController,
+              physics: const BouncingScrollPhysics(), // เลื่อนหนึบขึ้น
+              pageSnapping: true, 
               onPageChanged: (index) {
                 setState(() => _currentPage = index);
               },
               itemCount: widget.imageUrls.length,
               itemBuilder: (context, index) {
-                return Container(
-                  color: AppTheme.accentLight,
-                  alignment: Alignment.center,
-                  child: Image.network(
-                    widget.imageUrls[index],
-                    fit: BoxFit.contain,
-                    width: double.infinity,
-                    errorBuilder: (_, __, ___) => const Center(
-                      child: Text('🎁', style: TextStyle(fontSize: 64)),
-                    ),
-                    loadingBuilder: (_, child, progress) => progress == null
-                        ? child
-                        : const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.accent,
+                return GestureDetector(
+                  onTap: () => _openFullScreen(context, index), // กดซูมรูป
+                  child: Container(
+                    color: AppTheme.accentLight,
+                    alignment: Alignment.center,
+                    child: Image.network(
+                      widget.imageUrls[index],
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Text('🎁', style: TextStyle(fontSize: 64)),
+                      ),
+                      loadingBuilder: (_, child, progress) => progress == null
+                          ? child
+                          : const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.accent,
+                              ),
                             ),
-                          ),
+                    ),
                   ),
                 );
               },
@@ -154,7 +174,6 @@ class _ImageCarouselState extends State<ImageCarousel> {
     );
   }
 }
-
 // ─── Item Image ───────────────────────────────────────────
 class ItemImage extends StatelessWidget {
   final List<String> imageUrls;
@@ -677,5 +696,48 @@ class SectionLabel extends StatelessWidget {
       letterSpacing: 0.8,
     ),
   );
+}
+
+
+// ─── Full Screen Image Viewer ─────────────────────────────
+class FullScreenImageViewer extends StatelessWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  const FullScreenImageViewer({
+    super.key,
+    required this.imageUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black, // พื้นหลังสีดำดูโปร
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: PageView.builder(
+        controller: PageController(initialPage: initialIndex),
+        physics: const BouncingScrollPhysics(), // เลื่อนแล้วมีเด้งๆ ขอบจอ
+        itemCount: imageUrls.length,
+        itemBuilder: (context, index) {
+          return InteractiveViewer( // ซูมรูปได้
+            panEnabled: true,
+            minScale: 1.0, // ย่อสุดได้เท่าขนาดปกติ
+            maxScale: 4.0, // ซูมเข้าไปได้สูงสุด 4 เท่า
+            child: Center(
+              child: Image.network(
+                imageUrls[index],
+                fit: BoxFit.contain,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
