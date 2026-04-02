@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart'; 
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
@@ -8,6 +9,7 @@ import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:anigoods/core/constants/app_constants.dart';
 import 'package:anigoods/features/home/repositories/home_repository.dart';
+import 'package:anigoods/core/router/app_router.dart';
 import 'dart:async'; //timer
 
 const List<String> kCategories = [
@@ -97,23 +99,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 )
               : ListView.builder(
-                  key: PageStorageKey<String>('home_items'),
+                  key: const PageStorageKey<String>('home_items'),
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   itemCount: items.length,
                   itemBuilder: (_, i) => ItemCard(
                     key: ValueKey(items[i].id),
                     item: items[i],
                     isWatchlisted: watchlist.contains(items[i].id),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ItemDetailScreen(
-                          item: items[i],
-                          isWatchlisted: watchlist.contains(items[i].id),
-                          onWatchlistToggle: () =>
-                              _toggleWatchlist(items[i].id),
-                        ),
-                      ),
+                    onTap: () => context.push(
+                      RouteNames.itemDetail.path,
+                      extra: {
+                        'item': items[i],
+                        'isWatchlisted': watchlist.contains(items[i].id),
+                        'onWatchlistToggle': () => _toggleWatchlist(items[i].id),
+                      },
                     ),
                     onWatchlistToggle: () => _toggleWatchlist(items[i].id),
                   ),
@@ -276,8 +275,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
               ),
               onChanged: (v) {
-                if (_debounce?.isActive ?? false)
+                if (_debounce?.isActive ?? false) {
                   _debounce!.cancel(); // ถ้านาฬิกาเดินอยู่ ให้ยกเลิกก่อน
+                }
                 _debounce = Timer(const Duration(milliseconds: 500), () {
                   // ตั้งเวลา(ครึ่งวินาที)
                   setState(() => _query = v); // พอครบเวลา ค่อยสั่งอัปเดตหน้าจอ

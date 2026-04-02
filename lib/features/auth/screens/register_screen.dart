@@ -18,38 +18,99 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // 1. เพิ่มแฟ้มหนีบเอกสาร
-  final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl  = TextEditingController();
   
+  // 🎯 1. สร้างตัวจับโฟกัส (FocusNode)
+  final _emailFocus    = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmFocus  = FocusNode();
+
+  // 🎯 2. ตัวแปรเช็คว่า "เคยคลิกเข้าแล้วออกหรือยัง?" (Touched)
+  bool _emailTouched    = false;
+  bool _passwordTouched = false;
+  bool _confirmTouched  = false;
+
   bool _loading  = false;
   bool _obscure1 = true;
   bool _obscure2 = true;
-  String? _error;
+  String? _firebaseError;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🎯 3. ดักฟัง! ถ้าเสียโฟกัส (คลิกออก) ให้ตั้งค่า Touched เป็น true แล้วสั่งอัปเดตหน้าจอ
+    _emailFocus.addListener(() {
+      if (!_emailFocus.hasFocus) setState(() => _emailTouched = true);
+    });
+    _passwordFocus.addListener(() {
+      if (!_passwordFocus.hasFocus) setState(() => _passwordTouched = true);
+    });
+    _confirmFocus.addListener(() {
+      if (!_confirmFocus.hasFocus) setState(() => _confirmTouched = true);
+    });
+  }
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
-  // 🗑️ ลบตัวแปร _passwordsMatch และ _canSubmit ทิ้งไปได้เลย! แฟ้มเอกสารจะจัดการเอง
+  String? get _emailError {
+    if (!_emailTouched) return null; 
+    final text = _emailCtrl.text.trim();
+    
+    if (text.isEmpty) return 'Please enter your email';
+    
+    // 👇 ใช้ Regex ตรวจสอบว่าต้องเป็นรูปแบบ อีเมล@โดเมน.com เท่านั้น
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$');
+    if (!emailRegex.hasMatch(text)) {
+      return 'Please enter a valid email address';
+    }
+    
+    return null;
+  }
+
+  String? get _passwordError {
+    if (!_passwordTouched) return null;
+    final text = _passwordCtrl.text;
+    if (text.isEmpty) return 'Please enter a password';
+    if (text.length < 8) return 'Min. 8 characters required';
+    return null;
+  }
+
+  String? get _confirmError {
+    if (!_confirmTouched) return null;
+    final text = _confirmCtrl.text;
+    if (text.isEmpty) return 'Please confirm your password';
+    if (text != _passwordCtrl.text) return 'Passwords do not match';
+    return null;
+  }
 
   Future<void> _register() async {
-    // 2. สั่งให้แฟ้มตรวจเอกสารก่อน ถ้าช่องไหนไม่ผ่านให้หยุดทำงาน
-    if (!_formKey.currentState!.validate()) {
+    // 🎯 5. พอกดปุ่ม Create ให้บังคับ Touched เป็น true ให้หมด (เผื่อคนไม่พิมพ์อะไรเลยแล้วกดปุ่ม)
+    setState(() {
+      _emailTouched = true;
+      _passwordTouched = true;
+      _confirmTouched = true;
+    });
+
+    // ถ้ามี Error แม้แต่ช่องเดียว ให้หยุดการทำงาน
+    if (_emailError != null || _passwordError != null || _confirmError != null) {
       return;
     }
 
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; _firebaseError = null; });
     try {
-      // Create Firebase Auth account
-      final credential = await _authService.registerWithEmail(
+      await _authService.registerWithEmail(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
@@ -59,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       ErrorHandler.logError('register_screen._register()', e);
-      setState(() => _error = ErrorHandler.getUserMessage(e));
+      setState(() => _firebaseError = ErrorHandler.getUserMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -71,118 +132,106 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          // 3. เอา Form มาครอบไว้
-          child: Form(
-            key: _formKey, // 👈 หนีบแฟ้มไว้ตรงนี้
-            child: Column(
-              children: [
-                const SizedBox(height: 60),
-                const _Logo(subtitle: 'Join the collector community'),
-                const SizedBox(height: 40),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
+              const _Logo(subtitle: 'Join the collector community'),
+              const SizedBox(height: 40),
 
-                _FieldLabel('Email'),
-                const SizedBox(height: 6),
-                // 4. เปลี่ยนเป็น TextFormField
-                TextFormField(
-                  controller: _emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                  decoration: const InputDecoration(hintText: 'your@email.com'),
-                  // ใส่ Validator เช็คอีเมล
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
+              _FieldLabel('Email'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _emailCtrl,
+                focusNode: _emailFocus, // 👈 ผูก FocusNode
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                onChanged: (_) {
+                  // ถ้าเคยผิดไปแล้ว พอกลับมาแก้ให้มันหายแดงทันที (Real-time เฉพาะตอนแก้)
+                  if (_emailTouched) setState(() {});
+                },
+                decoration: InputDecoration(
+                  hintText: 'your@email.com',
+                  errorText: _emailError, // 👈 โชว์ข้อความ Error อัตโนมัติ (ถ้ามี)
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              _FieldLabel('Password'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _passwordCtrl,
+                focusNode: _passwordFocus, // 👈 ผูก FocusNode
+                obscureText: _obscure1,
+                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                onChanged: (_) {
+                  if (_passwordTouched) setState(() {});
+                  if (_confirmTouched) setState(() {}); // อัปเดตช่องล่างด้วยเผื่อรหัสตรงกันแล้ว
+                },
+                decoration: InputDecoration(
+                  hintText: 'Min. 8 characters',
+                  errorText: _passwordError, // 👈 โชว์ข้อความ Error
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscure1 ? Icons.visibility_off : Icons.visibility,
+                        color: AppTheme.textMuted, size: 18),
+                    onPressed: () => setState(() => _obscure1 = !_obscure1),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              _FieldLabel('Confirm Password'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _confirmCtrl,
+                focusNode: _confirmFocus, // 👈 ผูก FocusNode
+                obscureText: _obscure2,
+                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                onChanged: (_) {
+                  if (_confirmTouched) setState(() {});
+                },
+                onSubmitted: (_) => _register(),
+                decoration: InputDecoration(
+                  hintText: 'Repeat password',
+                  errorText: _confirmError, // 👈 โชว์ข้อความ Error
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscure2 ? Icons.visibility_off : Icons.visibility,
+                        color: AppTheme.textMuted, size: 18),
+                    onPressed: () => setState(() => _obscure2 = !_obscure2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              if (_firebaseError != null) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, color: AppTheme.danger, size: 16),
+                    const SizedBox(width: 8),
+                    Text(_firebaseError!, style: const TextStyle(color: AppTheme.danger, fontSize: 13)),
+                  ],
                 ),
                 const SizedBox(height: 16),
-
-                _FieldLabel('Password'),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _passwordCtrl,
-                  obscureText: _obscure1,
-                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Min. 8 characters',
-                    // ลบ errorText แบบเก่าทิ้งไปเลย
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscure1 ? Icons.visibility_off : Icons.visibility,
-                          color: AppTheme.textMuted, size: 18),
-                      onPressed: () => setState(() => _obscure1 = !_obscure1), // setState ตรงนี้ยังต้องมี เพื่อสลับไอคอนรูปตา
-                    ),
-                  ),
-                  // ใส่ Validator เช็ครหัสผ่าน
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 8) {
-                      return 'Min. 8 characters required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                _FieldLabel('Confirm Password'),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _confirmCtrl,
-                  obscureText: _obscure2,
-                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                  onFieldSubmitted: (_) => _register(), // เปลี่ยนจาก onSubmitted เป็น onFieldSubmitted
-                  decoration: InputDecoration(
-                    hintText: 'Repeat password',
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscure2 ? Icons.visibility_off : Icons.visibility,
-                          color: AppTheme.textMuted, size: 18),
-                      onPressed: () => setState(() => _obscure2 = !_obscure2),
-                    ),
-                  ),
-                  // ใส่ Validator เช็คว่ารหัสตรงกันไหม
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordCtrl.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // สำหรับโชว์ Error จาก Firebase (เช่น อีเมลซ้ำ)
-                if (_error != null) ...[
-                  Text(_error!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
-                  const SizedBox(height: 12),
-                ],
-
-                PrimaryButton(
-                  label: 'Create Account',
-                  // 5. ปุ่มกดได้เสมอ ไม่ต้องเช็ค _canSubmit แล้ว
-                  onTap: _loading ? null : _register,
-                  loading: _loading,
-                ),
-                const SizedBox(height: 20),
-
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Text('Already have an account? ',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                  GestureDetector(
-                    onTap: () => context.go('/login'),
-                    child: const Text('Sign In',
-                        style: TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w600)),
-                  ),
-                ]),
-                const SizedBox(height: 24),
               ],
-            ),
+
+              PrimaryButton(
+                label: 'Create Account',
+                onTap: _loading ? null : _register,
+                loading: _loading,
+              ),
+              const SizedBox(height: 20),
+
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Text('Already have an account? ',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                GestureDetector(
+                  onTap: () => context.go('/login'),
+                  child: const Text('Sign In',
+                      style: TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                ),
+              ]),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),

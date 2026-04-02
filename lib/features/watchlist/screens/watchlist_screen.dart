@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart'; // 👈 1. เพิ่ม Import GoRouter
+import 'package:anigoods/core/router/app_router.dart'; // 👈 2. เพิ่ม Import AppRouter สำหรับ RouteNames
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
@@ -128,24 +130,20 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       }
 
                       return ListView.builder(
-                        key: PageStorageKey<String>('watchlist_items'),
+                        key: const PageStorageKey<String>('watchlist_items'),
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                         itemCount: items.length,
                         itemBuilder: (_, i) => ItemCard(
                           key: ValueKey(items[i].id),
                           item: items[i],
                           isWatchlisted: true,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ItemDetailScreen(
-                                item: items[i],
-                                isWatchlisted: true,
-                                onWatchlistToggle: () {
-                                  _remove(items[i].id);
-                                },
-                              ),
-                            ),
+                          onTap: () => context.push(
+                            RouteNames.itemDetail.path,
+                            extra: {
+                              'item': items[i],
+                              'isWatchlisted': true,
+                              'onWatchlistToggle': () => _remove(items[i].id),
+                            },
                           ),
                           onWatchlistToggle: () => _remove(items[i].id),
                         ),
@@ -161,6 +159,3 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     );
   }
 }
-
-
-

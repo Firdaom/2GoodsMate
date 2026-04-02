@@ -10,6 +10,7 @@ import 'package:anigoods/core/services/error_handler.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/features/profile/screens/setting_screen.dart';
 import 'package:anigoods/features/profile/screens/edit_profile_screen.dart';
+import 'package:go_router/go_router.dart';
 
 // ════════════════════════════════════════════════════════
 // PROFILE
@@ -119,14 +120,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 28),
 
-              const SectionLabel( 'ACCOUNT'),
+             const SectionLabel( 'ACCOUNT'),
               const SizedBox(height: 8),
+              
               SettingsRow(
                 emoji: '👤',
                 label: 'Personal Information',
                 onTap: () async {
-                  await Navigator.push(
-                    context,
+                  // 👇 1. เพิ่ม rootNavigator: true ตรงนี้ เพื่อให้ Bottom Bar หายไปตอนแก้โปรไฟล์
+                  await Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (_) => EditProfileScreen(user: _user),
                     ),
@@ -136,13 +138,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SettingsRow(emoji: '❤️', label: 'My Watchlist'),
               const SettingsRow(emoji: '📦', label: 'My Listings'),
+              
               SettingsRow(
                 emoji: '⚙️',
                 label: 'Settings',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                ),
+                onTap: () => context.push('/settings'), 
               ),
             ],
           ),
