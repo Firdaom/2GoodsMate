@@ -1,52 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart'; 
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
-import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:anigoods/core/constants/app_constants.dart';
 import 'package:anigoods/features/home/repositories/home_repository.dart';
 import 'package:anigoods/core/router/app_router.dart';
-import 'dart:async'; //timer
+import 'package:anigoods/core/providers/search_provider.dart'; 
+import 'package:anigoods/core/widgets/search_filter_widget.dart';
 
-const List<String> kCategories = [
-  'All',
-  'Figures',
-  'Cards',
-  'Manga',
-  'Merchandise',
-  'Vinyl',
-];
-const List<String> kRarities = ['All', 'Limited', 'Rare', 'Common'];
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final _searchCtrl = TextEditingController();
-  String _query = '';
-  Timer? _debounce;
-  String _category = 'All';
-  String _rarity = 'All';
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchCtrl.dispose();
-    super.dispose();
-  }
 
   Future<void> _toggleWatchlist(String itemId) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -65,15 +33,37 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  List<ItemModel> _filter(List<ItemModel> items) => items.where((item) {
-    final q = _query.toLowerCase();
-    final matchQ = q.isEmpty || item.matchesQuery(q);
-    final matchCat = _category == 'All' || item.category == _category;
-    final matchRar = _rarity == 'All' || item.rarity == _rarity;
-    return matchQ && matchCat && matchRar;
-  }).toList();
+  Query _buildFirestoreQuery(String category, String rarity) {
+    Query query = FirebaseFirestore.instance.collection(FirebaseCollections.items);
+    if (category != 'All') query = query.where('category', isEqualTo: category);
+    if (rarity != 'All') query = query.where('rarity', isEqualTo: rarity);
+    return query.orderBy(ItemFields.postedAt, descending: true);
+  }
 
-  Widget _renderItems(List<ItemModel> items, List<String> watchlist) {
+  Widget _buildHeader(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        RichText(
+          text: const TextSpan(
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            children: [
+              TextSpan(text: '2Goods', style: TextStyle(color: AppTheme.textPrimary)),
+              TextSpan(text: 'Mate', style: TextStyle(color: AppTheme.accent)),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: () => context.push(RouteNames.notifications.path), 
+          child: const Text('🔔', style: TextStyle(fontSize: 22)),
+        ),
+      ],
+    ),
+  );
+
+  Widget _renderItems(BuildContext context, List<ItemModel> items, List<String> watchlist) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -81,22 +71,14 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             '${items.length} ITEM${items.length != 1 ? "S" : ""} FOUND',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textMuted,
-              letterSpacing: 0.4,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textMuted, letterSpacing: 0.4),
           ),
         ),
         const SizedBox(height: 10),
         Expanded(
           child: items.isEmpty
               ? const Center(
-                  child: Text(
-                    'No items match your search.',
-                    style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-                  ),
+                  child: Text('No items match your search.', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
                 )
               : ListView.builder(
                   key: const PageStorageKey<String>('home_items'),
@@ -122,322 +104,57 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showRaritySheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: AppTheme.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Filter by Rarity',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...kRarities.map(
-              (rarity) => GestureDetector(
-                onTap: () {
-                  setState(() => _rarity = rarity);
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AppTheme.border)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        rarity,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _rarity == rarity
-                              ? AppTheme.accent
-                              : AppTheme.textSecondary,
-                          fontWeight: _rarity == rarity
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                      ),
-                      if (_rarity == rarity)
-                        const Icon(
-                          Icons.check,
-                          color: AppTheme.accent,
-                          size: 18,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build header section (logo + notification button)
-  Widget _buildHeader() => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        RichText(
-          text: const TextSpan(
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-            children: [
-              TextSpan(
-                text: '2Goods',
-                style: TextStyle(color: AppTheme.textPrimary),
-              ),
-              TextSpan(
-                text: 'Mate',
-                style: TextStyle(color: AppTheme.accent),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () => appRouter.push(RouteNames.notifications.path),
-          child: const Text('🔔', style: TextStyle(fontSize: 22)),
-        ),
-      ],
-    ),
-  );
-
-  /// Build search bar section
-  Widget _buildSearchBar() => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _query.isNotEmpty
-              ? AppTheme.accent.withOpacity(0.4)
-              : AppTheme.border,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 14),
-          Icon(
-            Icons.search,
-            color: _query.isNotEmpty ? AppTheme.accent : AppTheme.textMuted,
-            size: 18,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: _searchCtrl,
-              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-              decoration: const InputDecoration(
-                hintText: 'Search figures, cards, manga...',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                fillColor: Colors.transparent,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
-              ),
-              onChanged: (v) {
-                if (_debounce?.isActive ?? false) {
-                  _debounce!.cancel(); // ถ้านาฬิกาเดินอยู่ ให้ยกเลิกก่อน
-                }
-                _debounce = Timer(const Duration(milliseconds: 500), () {
-                  // ตั้งเวลา(ครึ่งวินาที)
-                  setState(() => _query = v); // พอครบเวลา ค่อยสั่งอัปเดตหน้าจอ
-                });
-              },
-            ),
-          ),
-          if (_query.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                _debounce?.cancel(); // ถ้ายกเลิกค้นหา ให้หยุดนาฬิกาด้วย
-                _searchCtrl.clear();
-                setState(() => _query = '');
-              },
-              child: const Padding(
-                padding: EdgeInsets.only(right: 14),
-                child: Icon(Icons.close, color: AppTheme.textMuted, size: 16),
-              ),
-            ),
-        ],
-      ),
-    ),
-  );
-
-  /// Build filter chips section
-  Widget _buildFilterChips() => SizedBox(
-    height: 36,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: [
-        GestureDetector(
-          onTap: _showRaritySheet,
-          child: Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _rarity != 'All' ? AppTheme.accent : AppTheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _rarity != 'All' ? AppTheme.accent : AppTheme.border,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.filter_list,
-                  size: 14,
-                  color: _rarity != 'All'
-                      ? Colors.white
-                      : AppTheme.textSecondary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Rarity',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _rarity != 'All'
-                        ? Colors.white
-                        : AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        ...kCategories.map(
-          (cat) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: CategoryChip(
-              label: cat,
-              selected: _category == cat,
-              onTap: () => setState(() => _category = cat),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ฟังก์ชันสำหรับสร้างคำสั่งดึงข้อมูลจาก Firebase อย่างประหยัด
-  Query _buildFirestoreQuery() {
-    Query query = FirebaseFirestore.instance.collection(
-      FirebaseCollections.items,
-    );
-
-    // ถ้าไม่ได้เลือก All ให้ฐานข้อมูลกรอง Category มาให้เลย
-    if (_category != 'All') {
-      query = query.where('category', isEqualTo: _category);
-    }
-
-    // ถ้าไม่ได้เลือก All ให้ฐานข้อมูลกรอง Rarity มาให้เลย
-    if (_rarity != 'All') {
-      query = query.where('rarity', isEqualTo: _rarity);
-    }
-
-    // เรียงลำดับจากของใหม่ไปเก่า
-    return query.orderBy(ItemFields.postedAt, descending: true);
-  }
-
-  /// Build items list with stream and filter
-  Widget _buildItemsList() => Expanded(
-    child: StreamBuilder<QuerySnapshot>(
-      stream: _buildFirestoreQuery().snapshots(), //  เรียกใช้ Query ที่กรองแล้ว
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppTheme.accent),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        // แปลงข้อมูลจาก Firebase เป็น ItemModel
-        final all =
-            snapshot.data?.docs
-                .map((doc) => ItemModel.fromFirestore(doc))
-                .toList() ??
-            [];
-
-        //  ให้มือถือกรองเฉพาะ "คำค้นหา (Search)" ต่ออีกชั้นนึง
-        final items = _query.isEmpty
-            ? all
-            : all
-                  .where((item) => item.matchesQuery(_query.toLowerCase()))
-                  .toList();
-
-        final uid = FirebaseAuth.instance.currentUser?.uid;
-        if (uid == null) return _renderItems(items, []);
-
-        // ดึงข้อมูล Watchlist
-        return StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection(FirebaseCollections.users)
-              .doc(uid)
-              .snapshots(),
-          builder: (context, userSnapshot) {
-            final watchlist =
-                userSnapshot.data?.get(UserFields.watchlist)
-                    as List<dynamic>? ??
-                [];
-            final watchlistIds = List<String>.from(watchlist.cast<String>());
-            return _renderItems(items, watchlistIds);
-          },
-        );
-      },
-    ),
-  );
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final query = ref.watch(homeSearchQueryProvider);
+    final category = ref.watch(homeCategoryProvider);
+    final rarity = ref.watch(homeRarityProvider);
+
     return Scaffold(
+
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             const SizedBox(height: 16),
-            _buildSearchBar(),
-            const SizedBox(height: 12),
-            _buildFilterChips(),
+            
+            // search & filter widget 
+            SearchAndFilterWidget(),
             const SizedBox(height: 10),
-            _buildItemsList(),
+
+            // สร้างลิสต์ข้อมูลโดยใช้ตัวแปรจาก Provider
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _buildFirestoreQuery(category, rarity).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+
+                  final all = snapshot.data?.docs.map((doc) => ItemModel.fromFirestore(doc)).toList() ?? [];
+                  
+                  // กรองข้อมูลด้วยคำค้นหา
+                  final items = query.isEmpty
+                      ? all
+                      : all.where((item) => item.matchesQuery(query.toLowerCase())).toList();
+
+                  final uid = FirebaseAuth.instance.currentUser?.uid;
+                  if (uid == null) return _renderItems(context, items, []);
+
+                  return StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection(FirebaseCollections.users).doc(uid).snapshots(),
+                    builder: (context, userSnapshot) {
+                      final watchlist = userSnapshot.data?.get(UserFields.watchlist) as List<dynamic>? ?? [];
+                      final watchlistIds = List<String>.from(watchlist.cast<String>());
+                      return _renderItems(context, items, watchlistIds);
+                    },
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

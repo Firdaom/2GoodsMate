@@ -144,58 +144,16 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.itemDetail.path,
       name: RouteNames.itemDetail.name,
-      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final args = state.extra as Map?;     
-        
-        if (args == null || args['item'] == null) {
-          return Scaffold(
-            backgroundColor: const Color(0xFF131313),
-            appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('⚠️', style: TextStyle(fontSize: 48)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Item data lost due to page refresh.',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.go('/home'),
-                    child: const Text('Back to Home'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
+        // แกะกล่อง Map ที่ส่งมาจากหน้า Home
+        final extras = state.extra as Map<String, dynamic>; 
         
         return ItemDetailScreen(
-          item: args['item'] as ItemModel, 
-          isWatchlisted: args['isWatchlisted'] as bool? ?? false,
-          onWatchlistToggle: args['onWatchlistToggle'] as void Function()? ?? () {},
-        ); 
+          item: extras['item'] as ItemModel,
+          isWatchlisted: extras['isWatchlisted'] as bool,
+          onWatchlistToggle: extras['onWatchlistToggle'] as VoidCallback,
+        );
       },
-    ),
-    // หน้า Settings (ทับเต็มจอ)
-    GoRoute(
-      path: RouteNames.settings.path,
-      name: RouteNames.settings.name,
-      parentNavigatorKey: _rootNavigatorKey, 
-      builder: (context, state) => const SettingsScreen(), 
-    ),
-    // หน้า Edit Profile (ทับเต็มจอ)
-    GoRoute(
-      path: RouteNames.editProfile.path,
-      name: RouteNames.editProfile.name,
-      parentNavigatorKey: _rootNavigatorKey, 
-      builder: (context, state) {
-        final user = state.extra as UserModel?;
-        return EditProfileScreen(user: user);
-      }, 
     ),
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
