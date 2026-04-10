@@ -100,13 +100,6 @@ class _TopNavBar extends StatelessWidget {
           ),
           Row(
             children: [
-              if (!isMobile) ...[
-                GestureDetector(
-                  onTap: () => context.go('/login'), // 👈 Sign in ยังคงไปที่หน้า Login ปกติ
-                  child: const _NavLink(text: 'Sign in'),
-                ),
-                const SizedBox(width: 16),
-              ],
               GestureDetector(
                 // 👇 1. ปุ่ม Sign Up ชี้ไปที่ /register
                 onTap: () => context.go('/register'), 
@@ -122,7 +115,7 @@ class _TopNavBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
-                      'Sign Up',
+                      'Lunch App',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13,

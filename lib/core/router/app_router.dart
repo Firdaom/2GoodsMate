@@ -18,6 +18,9 @@ import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/profile/screens/setting_screen.dart';
 import 'package:anigoods/features/profile/screens/edit_profile_screen.dart';
 import 'package:anigoods/features/profile/screens/my_listing_screen.dart';
+import 'package:anigoods/features/order/screens/order_screen.dart';
+import 'package:anigoods/features/order/screens/order_status_screen.dart';
+import 'package:anigoods/features/order/screens/purchase_history_screen.dart';
 import 'dart:async';
 
 // สร้าง Navigator Key เพื่อแยกเลเยอร์ (Root = เต็มจอ, Shell = มีเมนูล่าง)
@@ -39,7 +42,10 @@ enum RouteNames {
   notifications,
   addItem,
   settings,
-  myListings;
+  myListings,
+  order,
+  orderStatus,
+  purchaseHistory;
 
   // Helper getter
   String get path {
@@ -72,6 +78,12 @@ enum RouteNames {
         return '/add-item';
       case RouteNames.myListings:
         return '/my-listings';
+      case RouteNames.order:
+        return '/orders';
+      case RouteNames.orderStatus:
+        return '/order-status';
+      case RouteNames.purchaseHistory:
+        return '/purchase-history';
     }
   }
 }
@@ -171,6 +183,33 @@ final appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey, 
       builder: (context, state) => const SettingsScreen(),
     ),
+    GoRoute(
+      path: RouteNames.order.path,
+      name: RouteNames.order.name,
+      parentNavigatorKey: _rootNavigatorKey, 
+      builder: (context, state) {
+        final item = state.extra as ItemModel; 
+        return OrderScreen(item: item);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.orderStatus.path,
+      name: RouteNames.orderStatus.name,
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final String orderId = state.extra as String; 
+        return OrderStatusScreen(orderId: orderId);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.purchaseHistory.path,
+      name: RouteNames.purchaseHistory.name,
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final initialIndex = (state.extra as int?) ?? 0;
+        return PurchaseHistoryScreen(initialIndex: initialIndex);
+      },
+    ),
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
     ShellRoute(
@@ -183,7 +222,6 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) =>
               NoTransitionPage(child: const HomeScreen()),
         ),
-        // ✅ เอา Watchlist กลับมาไว้ตรงนี้แล้วครับ!
         GoRoute(
           path: RouteNames.watchlist.path,
           name: RouteNames.watchlist.name,

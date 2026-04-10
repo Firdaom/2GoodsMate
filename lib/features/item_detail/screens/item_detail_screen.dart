@@ -3,6 +3,8 @@ import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/features/report/screens/report_screen.dart';
+import 'package:go_router/go_router.dart'; 
+import 'package:anigoods/core/router/app_router.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final ItemModel item;
@@ -36,7 +38,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   //ฟังก์ชัน build หลัก 
   @override
-  Widget build(BuildContext context) {
+ Widget build(BuildContext context) {
     final item = widget.item;
     return Scaffold(
       body: CustomScrollView(
@@ -44,6 +46,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           _buildHeroImage(item), // ดึงส่วนรูปภาพมาแสดง
           _buildItemDetails(item), // ดึงส่วนรายละเอียดมาแสดง
         ],
+      ),
+      // Order button
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.background,
+          border: const Border(top: BorderSide(color: AppTheme.border)), // เส้นคั่นบางๆ ด้านบน
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min, 
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: PrimaryButton(
+                  label: 'Order Now',
+                  onTap: () {
+                    // 🚀 สั่งวิ่งไปหน้า Order พร้อมพกข้อมูล item ชิ้นนี้ไปด้วย
+                    context.push(RouteNames.order.path, extra: item);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
