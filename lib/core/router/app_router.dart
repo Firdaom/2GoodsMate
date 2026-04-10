@@ -196,9 +196,9 @@ final appRouter = GoRouter(
       path: RouteNames.order.path,
       name: RouteNames.order.name,
       parentNavigatorKey: _rootNavigatorKey, 
-      builder: (context, state) {
-        final item = state.extra as ItemModel; 
-        return OrderScreen(item: item);
+     builder: (context, state) {
+        final items = state.extra as List<ItemModel>; 
+        return OrderScreen(items: items);
       },
     ),
     GoRoute(

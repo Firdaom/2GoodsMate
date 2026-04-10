@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:anigoods/core/services/cart_service.dart';
 import 'firebase_options.dart';
 
 
@@ -15,6 +17,13 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // เช็คว่ามีผู้ใช้ล็อกอินค้างไว้ในเครื่องหรือไม่
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      // ถ้ามีคนล็อกอินอยู่ ให้โหลดของในตะกร้าจาก Firebase มารอไว้เลย!
+      await CartService().loadCart();
+    }
 
 
   } catch (e) {
@@ -46,5 +55,3 @@ class AniGoodsApp extends StatelessWidget {
     );
   }
 }
-
-

@@ -97,12 +97,22 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
   }
 
   // สร้าง List แสดงออเดอร์แต่ละแท็บ
-  Widget _buildOrderList(List<QueryDocumentSnapshot> allOrders, String statusFilter) {
-    // กรองเอาเฉพาะออเดอร์ที่ตรงกับสถานะของแท็บนั้นๆ (ถ้าเป็น all ก็เอาหมด)
+ Widget _buildOrderList(List<QueryDocumentSnapshot> allOrders, String tabFilter) {
+    // กรองเอาเฉพาะออเดอร์ที่ตรงกับเงื่อนไขของแท็บ
     final filteredOrders = allOrders.where((doc) {
-      if (statusFilter == 'all') return true;
-      return doc.data().toString().contains('status: $statusFilter') || 
-             (doc.data() as Map<String, dynamic>)['status'] == statusFilter;
+      if (tabFilter == 'all') return true;
+
+      final orderData = doc.data() as Map<String, dynamic>;
+      // ดึงสถานะมาแปลงเป็นพิมพ์เล็กเพื่อกันเหนียว
+      final dbStatus = orderData['status']?.toString().toLowerCase() ?? '';
+
+      // แก้บั๊กตรงนี้: ถ้าอยู่แท็บ To Receive ให้ดึงทั้งของที่ Shipped แล้ว และของที่ถึงแล้วแต่ยังไม่กดรับ
+      if (tabFilter == 'to_receive') {
+        return dbStatus == 'shipped' || dbStatus == 'to_receive';
+      }
+
+      // แท็บอื่นๆ (to_pay, to_ship, completed) เช็คให้ตรงตัวได้เลย
+      return dbStatus == tabFilter;
     }).toList();
 
     if (filteredOrders.isEmpty) {

@@ -131,9 +131,8 @@ class CartScreen extends StatelessWidget {
               label: 'Checkout Now',
               onTap: () {
                 if (cartItems.isNotEmpty) {
-                  final itemToOrder = cartItems.first;
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  context.push(RouteNames.order.path, extra: itemToOrder);
+                  context.push(RouteNames.order.path, extra: cartItems);
                 }
               },
             ),

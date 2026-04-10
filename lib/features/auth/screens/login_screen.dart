@@ -1,3 +1,4 @@
+import 'package:anigoods/core/services/cart_service.dart';
 import 'package:anigoods/features/auth/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,12 +44,18 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
       _error = null;
     });
+    
     try {
+      // 1. เรียกคำสั่งเข้าสู่ระบบของเดิม
       await _authService.signInWithEmail(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
 
+
+      await CartService().loadCart();
+
+      // 3. วาร์ปไปหน้า Home
       if (mounted) {
         context.goNamed('home');
       }

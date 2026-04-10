@@ -45,21 +45,33 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
       final itemDoc = await db.collection('items').doc(order.itemId).get();
       if (!itemDoc.exists) throw Exception('Item not found');
 
-      // (สมมติว่าคุณมีฟังก์ชัน fromFirestore ใน ItemModel ด้วย)
+      final itemData = itemDoc.data() as Map<String, dynamic>; // ดึง Data มาเก็บไว้ก่อน
+
+      // 🔥 โค้ดนักสืบหารูปภาพแบบเดียวกับหน้า My Purchases!
+      List<String> parsedImageUrls = [];
+      if (itemData['imageUrls'] != null && itemData['imageUrls'] is List && (itemData['imageUrls'] as List).isNotEmpty) {
+        // ถ้ามีแบบ List ให้ดึงมาใส่
+        parsedImageUrls = (itemData['imageUrls'] as List).map((e) => e.toString()).toList();
+      } else if (itemData['imageUrl'] != null && itemData['imageUrl'] is String) {
+        // ถ้ามีแบบรูปเดียวดั้งเดิม ให้จับใส่ List
+        parsedImageUrls = [itemData['imageUrl']];
+      }
+
+      // นำข้อมูลมาสร้าง ItemModel
       final item = ItemModel(
         id: itemDoc.id,
-        series: itemDoc.data()?['series'] ?? '',
-        sellerId: itemDoc.data()?['sellerId'] ?? '',
-        sellerName: itemDoc.data()?['sellerName'] ?? 'Unknown',
-        title: itemDoc.data()?['title'] ?? 'Unknown Item',
-        description: itemDoc.data()?['description'] ?? '',
-        price: (itemDoc.data()?['price'] ?? 0.0).toDouble(),
-        imageUrls: itemDoc.data()?['imageUrl'] != null
-            ? [itemDoc.data()?['imageUrl']]
-            : [],
-        category: itemDoc.data()?['category'] ?? '',
-        condition: itemDoc.data()?['condition'] ?? '',
-        rarity: itemDoc.data()?['Rarity'] ?? '',
+        series: itemData['series'] ?? '',
+        sellerId: itemData['sellerId'] ?? '',
+        sellerName: itemData['sellerName'] ?? 'Unknown',
+        title: itemData['title'] ?? 'Unknown Item',
+        description: itemData['description'] ?? '',
+        price: (itemData['price'] ?? 0.0).toDouble(),
+        
+        imageUrls: parsedImageUrls, 
+        
+        category: itemData['category'] ?? '',
+        condition: itemData['condition'] ?? '',
+        rarity: itemData['Rarity'] ?? '',
         tags: [],
         contactLinks: [],
         postedAt: DateTime.now(),
@@ -69,6 +81,8 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
         reportCount: 0,
         flaggedAt: null,
       );
+
+
 
       setState(() {
         _order = order;
@@ -235,30 +249,32 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.accent),
-      );
+      return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     }
     if (_errorMessage.isNotEmpty) {
-      return Center(
-        child: Text(
-          'Error: $_errorMessage',
-          style: const TextStyle(color: Colors.red),
-        ),
-      );
+      return Center(child: Text('Error: $_errorMessage', style: const TextStyle(color: Colors.red)));
     }
     if (_order == null || _item == null) {
       return const Center(child: Text('Order details not found.'));
     }
 
-    // ตัวแปรเช็คสถานะออเดอร์
-    final status = _order!.status;
+    final status = _order!.status.toLowerCase();
+
+    //1. แปลงชื่อสถานะเป็น "ตัวเลขลำดับ" จะได้คำนวณง่าย
+    int stateIndex = 0;
+    if (status == 'to_pay') stateIndex = 0;
+    else if (status == 'to_ship') stateIndex = 1;
+    // รองรับทั้ง 2 คำ เผื่อหลังบ้านบันทึกมาเป็นคำไหนก็รอด!
+    else if (status == 'to_receive' || status == 'shipped') stateIndex = 2; 
+    else if (status == 'completed') stateIndex = 3;
+    else if (status == 'cancelled') stateIndex = -1; // -1 คือสถานะยกเลิก
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // การ์ดแสดงข้อมูลสินค้า (โค้ดส่วนนี้ของคุณถูกต้องอยู่แล้ว)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -272,19 +288,10 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Order ID',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
+                    const Text('Order ID', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                     Text(
-                      '#${_order!.id.substring(0, 8).toUpperCase()}', // ดึง ID จริงมาโชว์ 8 ตัวแรก
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.accent,
-                      ),
+                      '#${_order!.id.substring(0, 8).toUpperCase()}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.accent),
                     ),
                   ],
                 ),
@@ -306,10 +313,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Seller: ${_item!.sellerName}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textMuted,
-                            ),
+                            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                           ),
                         ],
                       ),
@@ -332,44 +336,57 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
             ),
             child: Column(
               children: [
-                _StatusStep(
-                  icon: Icons.inventory_2_outlined,
-                  title: 'Order Placed',
-                  subtitle: 'Waiting for seller to confirm.',
-                  time: 'Completed',
-                  isActive: status == 'to_pay',
-                  isPending: false,
-                  isLast: false,
-                ),
-                _StatusStep(
-                  icon: Icons.payments_outlined,
-                  title: 'Payment Confirmed',
-                  subtitle: 'Payment has been verified.',
-                  time: status == 'to_pay' ? 'Pending' : 'Completed',
-                  isActive: status == 'to_ship',
-                  isPending: status == 'to_pay',
-                  isLast: false,
-                ),
-                _StatusStep(
-                  icon: Icons.local_shipping_outlined,
-                  title: 'Shipped',
-                  subtitle: 'Seller is preparing the package.',
-                  time: (status == 'to_pay' || status == 'to_ship')
-                      ? 'Pending'
-                      : 'Completed',
-                  isActive: status == 'to_receive',
-                  isPending: status == 'to_pay' || status == 'to_ship',
-                  isLast: false,
-                ),
-                _StatusStep(
-                  icon: Icons.home_outlined,
-                  title: 'Delivered',
-                  subtitle: 'Package arrived at destination.',
-                  time: status == 'completed' ? 'Completed' : 'Pending',
-                  isActive: status == 'completed',
-                  isPending: status != 'completed',
-                  isLast: true,
-                ),
+                // 🔥 2. ถ้ากดยกเลิก (stateIndex == -1) โชว์อันนี้อันเดียวเลย
+                if (stateIndex == -1)
+                  const _StatusStep(
+                    icon: Icons.cancel_outlined,
+                    title: 'Order Cancelled',
+                    subtitle: 'This order has been cancelled.',
+                    time: 'Cancelled',
+                    isActive: false,
+                    isPending: false,
+                    isLast: true,
+                    isError: true, // สั่งให้ขึ้นสีแดง
+                  )
+                else ...[
+                  // 🔥 3. ถ้าไม่ยกเลิก ก็โชว์ Timeline ปกติ โดยเช็คจากตัวเลขเอา ง่ายกว่าเยอะ!
+                  _StatusStep(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'Order Placed',
+                    subtitle: 'Waiting for seller to confirm.',
+                    time: stateIndex > 0 ? 'Completed' : 'Pending',
+                    isActive: stateIndex == 0,
+                    isPending: stateIndex < 0,
+                    isLast: false,
+                  ),
+                  _StatusStep(
+                    icon: Icons.payments_outlined,
+                    title: 'Payment Confirmed',
+                    subtitle: 'Payment has been verified.',
+                    time: stateIndex > 1 ? 'Completed' : 'Pending',
+                    isActive: stateIndex == 1,
+                    isPending: stateIndex < 1,
+                    isLast: false,
+                  ),
+                  _StatusStep(
+                    icon: Icons.local_shipping_outlined,
+                    title: 'Shipped',
+                    subtitle: 'Seller has shipped the package.',
+                    time: stateIndex > 2 ? 'Completed' : 'Pending',
+                    isActive: stateIndex == 2,
+                    isPending: stateIndex < 2,
+                    isLast: false,
+                  ),
+                  _StatusStep(
+                    icon: Icons.home_outlined,
+                    title: 'Delivered',
+                    subtitle: 'Package arrived at destination.',
+                    time: stateIndex == 3 ? 'Completed' : 'Pending',
+                    isActive: stateIndex == 3,
+                    isPending: stateIndex < 3,
+                    isLast: true,
+                  ),
+                ],
               ],
             ),
           ),
@@ -379,7 +396,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
   }
 }
 
-// ─── Widget _StatusStep
+// ─── Widget _StatusStep (อัปเกรดให้รองรับสีแดง)
 class _StatusStep extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -388,6 +405,7 @@ class _StatusStep extends StatelessWidget {
   final bool isActive;
   final bool isPending;
   final bool isLast;
+  final bool isError; // 🔥 เพิ่มตัวแปรรองรับสถานะยกเลิก (สีแดง)
 
   const _StatusStep({
     required this.icon,
@@ -397,16 +415,14 @@ class _StatusStep extends StatelessWidget {
     this.isActive = false,
     this.isPending = false,
     required this.isLast,
+    this.isError = false, 
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color iconColor = isActive
-        ? AppTheme.accent
-        : (isPending ? AppTheme.border : AppTheme.success);
-    final Color bgColor = isActive
-        ? AppTheme.accentLight
-        : (isPending ? Colors.transparent : AppTheme.success.withOpacity(0.1));
+    // กำหนดสีตามสถานะ: ถ้า Error เอาสีแดง, ถ้า Active เอาสีเน้น, นอกนั้นสีเขียว/เทา
+    final Color iconColor = isError ? AppTheme.danger : (isActive ? AppTheme.accent : (isPending ? AppTheme.border : AppTheme.success));
+    final Color bgColor = isError ? AppTheme.danger.withOpacity(0.1) : (isActive ? AppTheme.accentLight : (isPending ? Colors.transparent : AppTheme.success.withOpacity(0.1)));
     final Color lineColor = isPending ? AppTheme.border : AppTheme.success;
 
     return IntrinsicHeight(
@@ -448,22 +464,16 @@ class _StatusStep extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          fontWeight: isActive
-                              ? FontWeight.bold
-                              : FontWeight.w600,
+                          fontWeight: (isActive || isError) ? FontWeight.bold : FontWeight.w600,
                           fontSize: 15,
-                          color: isPending
-                              ? AppTheme.textMuted
-                              : AppTheme.textPrimary,
+                          color: isError ? AppTheme.danger : (isPending ? AppTheme.textMuted : AppTheme.textPrimary),
                         ),
                       ),
                       Text(
                         time,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isPending
-                              ? AppTheme.border
-                              : AppTheme.textMuted,
+                          color: isError ? AppTheme.danger : (isPending ? AppTheme.border : AppTheme.textMuted),
                         ),
                       ),
                     ],
@@ -473,9 +483,7 @@ class _StatusStep extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isPending
-                          ? AppTheme.border
-                          : AppTheme.textSecondary,
+                      color: isPending ? AppTheme.border : AppTheme.textSecondary,
                     ),
                   ),
                 ],

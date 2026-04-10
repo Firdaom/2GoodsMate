@@ -1,3 +1,4 @@
+import 'package:anigoods/core/services/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
@@ -89,10 +90,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(context); // ปิดหน้าต่าง Dialog ก่อน
+              CartService().clearLocalCart(); 
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
-                context.go(RouteNames.login.path);
+                context.go(RouteNames.login.path); 
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
@@ -157,6 +159,7 @@ class SettingsScreen extends StatelessWidget {
             SettingsRow(
               icon: Icons.logout,
               label: 'Log Out',
+              
               danger: true,
               onTap: () => _showLogoutDialog(context),
             ),

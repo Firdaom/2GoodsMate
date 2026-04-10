@@ -47,10 +47,10 @@ class WatchlistScreen extends ConsumerWidget {
                 const SizedBox(width: 4),
                 IconButton(
                   onPressed: () {
-                    context.push('/chat-room', extra: 'Chat List');
+                    context.push(RouteNames.chat.path, extra: 'Chat List');
                   },
                   icon: const Icon(
-                    Icons.chat_outlined,
+                    Icons.sms_outlined,
                     color: AppTheme.textPrimary,
                     size: 24,
                   ),
