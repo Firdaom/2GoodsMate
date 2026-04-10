@@ -40,19 +40,18 @@ class CartService extends ChangeNotifier {
 
   // ➕ 2. เพิ่มลงตะกร้า (เซฟลง Firebase ด้วย)
   Future<void> addToCart(ItemModel item) async {
-    // กันไม่ให้แอดของชิ้นเดิมซ้ำ
-    if (!_items.any((element) => element.id == item.id)) {
-      _items.add(item);
-      notifyListeners();
+  if (!_items.any((element) => element.id == item.id)) {
+    _items.add(item);
+    notifyListeners(); 
 
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).set({
-          'cart': FieldValue.arrayUnion([item.id])
-        }, SetOptions(merge: true));
-      }
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'cart': FieldValue.arrayUnion([item.id])
+      }, SetOptions(merge: true)).catchError((e) => debugPrint(e));
     }
   }
+}
 
   // ➖ 3. ลบออกจากตะกร้า
   Future<void> removeFromCart(ItemModel item) async {

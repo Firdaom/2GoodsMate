@@ -58,7 +58,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
         child: SafeArea(
           child: Column(
-            // 🔥 2. บังคับให้ความสูงของล่างสุดหดตัวลงมาพอดีกับปุ่ม (ห้ามขยายเต็มจอ)
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
@@ -66,45 +65,105 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // 🛒 ปุ่ม Add to Cart
                   Expanded(
                     child: SizedBox(
-                      height: 52, 
+                      height: 52,
                       child: OutlinedButton(
                         onPressed: () {
+                          // 1. บังคับล้าง SnackBar ทั้งแอป
+                          ScaffoldMessenger.of(context).clearSnackBars();
+
+                          // 2. รัน Logic เพิ่มของ (แบบไม่รอ)
                           CartService().addToCart(item);
+
+                          // 3. แสดง SnackBar แบบสวยงาม
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('${item.title} added to cart!'),
-                              duration: const Duration(seconds: 2),
-                              action: SnackBarAction(
-                                label: 'View Cart',
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                  context.push('/cart'); 
-                                },
+                              backgroundColor: AppTheme.textPrimary, // ใช้สีเข้มตัดกับแอป
+                              elevation: 6,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16), // ขอบมนน่ารักๆ
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.only(bottom: 90, left: 20, right: 20),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              duration: const Duration(milliseconds: 2000), // เพิ่มเวลาให้อ่านทันนิดนึง
+                              content: Row(
+                                children: [
+                                  // 🛒 ไอคอนวงกลมด้านซ้าย
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white24,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.shopping_bag_outlined,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  
+                                  // 📝 ข้อความ
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          'Added to Cart',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          item.title,
+                                          maxLines: 1, // ป้องกันชื่อสินค้าหน้ากระดาษยาวเกินไป
+                                          overflow: TextOverflow.ellipsis, // ใส่ ... ต่อท้ายถ้าชื่อยาว
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           );
                         },
                         style: OutlinedButton.styleFrom(
-                          // เอา padding เดิมออกได้เลยครับ เพราะเราบังคับความสูงด้วย SizedBox แทนแล้ว
                           side: const BorderSide(color: AppTheme.accent),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Icon(Icons.add_shopping_cart, color: AppTheme.accent),
+                        child: const Icon(
+                          Icons.add_shopping_cart,
+                          color: AppTheme.accent,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  
-                  // ปุ่ม Order Now
+                  // ⚡ ปุ่ม Order Now
                   Expanded(
                     flex: 2,
                     child: SizedBox(
-                      height: 52, 
+                      height: 52,
                       child: PrimaryButton(
                         label: 'Order Now',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar(); 
-                          context.push(RouteNames.order.path, extra: item);
+                       onTap: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          
+                          // 2. ส่งค่าเป็น Map บอกว่า ไม่ได้มาจากตะกร้า(isFromCart: false)
+                          context.push(RouteNames.order.path, extra: {
+                            'items': [item],
+                            'isFromCart': false, 
+                          });
                         },
                       ),
                     ),

@@ -33,7 +33,8 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
     // ใช้ DefaultTabController เพื่อสร้างระบบ 5 แท็บ
     return DefaultTabController(
       length: 5,
-      initialIndex: widget.initialIndex, // เปิดมาให้เด้งไปแท็บที่กดมาจากหน้า Profile
+      initialIndex:
+          widget.initialIndex, // เปิดมาให้เด้งไปแท็บที่กดมาจากหน้า Profile
       child: Scaffold(
         appBar: AppBar(
           title: const Text('My Purchases'),
@@ -41,10 +42,13 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
-         bottom: const TabBar(
+          bottom: const TabBar(
             isScrollable: true, // เลื่อนซ้ายขวาได้
-            tabAlignment: TabAlignment.start, // 🔥 บังคับให้เริ่มเรียงจากขอบซ้าย (ไม่ให้มันไปกระจุกตรงกลาง)
-            labelPadding: EdgeInsets.symmetric(horizontal: 16.0), // 🔥 เพิ่มระยะห่างซ้ายขวาให้ตัวหนังสือไม่เบียดกัน
+            tabAlignment: TabAlignment
+                .start, // 🔥 บังคับให้เริ่มเรียงจากขอบซ้าย (ไม่ให้มันไปกระจุกตรงกลาง)
+            labelPadding: EdgeInsets.symmetric(
+              horizontal: 16.0,
+            ), // 🔥 เพิ่มระยะห่างซ้ายขวาให้ตัวหนังสือไม่เบียดกัน
             labelColor: AppTheme.accent,
             unselectedLabelColor: AppTheme.textMuted,
             indicatorColor: AppTheme.accent,
@@ -97,7 +101,10 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
   }
 
   // สร้าง List แสดงออเดอร์แต่ละแท็บ
- Widget _buildOrderList(List<QueryDocumentSnapshot> allOrders, String tabFilter) {
+  Widget _buildOrderList(
+    List<QueryDocumentSnapshot> allOrders,
+    String tabFilter,
+  ) {
     // กรองเอาเฉพาะออเดอร์ที่ตรงกับเงื่อนไขของแท็บ
     final filteredOrders = allOrders.where((doc) {
       if (tabFilter == 'all') return true;
@@ -132,12 +139,19 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
         final orderId = filteredOrders[index].id;
         final status = orderData['status'] ?? 'Unknown';
         final price = orderData['totalPrice'] ?? 0.0;
-        final itemId = orderData['itemId'] ?? ''; // 🔥 ดึงรหัสสินค้ามา
+        final itemId = orderData['itemId'] ?? ''; 
 
         return GestureDetector(
-          onTap: () {
-            // กดที่การ์ดออเดอร์ ให้วิ่งไปหน้า Order Status
-            context.push(RouteNames.orderStatus.path, extra: orderId);
+          onTap: () async {
+            // 1. เพิ่ม async เพื่อให้ใช้ await ได้
+            // 2. ใส่ await เพื่อบอกให้โค้ด "รอ" จนกว่าหน้า Order Status จะถูกปิด (Pop) กลับมา
+            await context.push(RouteNames.orderStatus.path, extra: orderId);
+
+            // 3. เมื่อกลับมาถึงบรรทัดนี้ (แปลว่า User กดย้อนกลับมาแล้ว)
+            // สั่ง setState ว่างๆ เพื่อให้ FutureBuilder ด้านบนรันใหม่และดึงข้อมูลล่าสุดจาก Firebase
+            if (mounted) {
+              setState(() {});
+            }
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -154,42 +168,69 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Order ID: #${orderId.substring(0, 8).toUpperCase()}', 
-                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    Text(status.toUpperCase().replaceAll('_', ' '), 
-                         style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(
+                      'Order ID: #${orderId.substring(0, 8).toUpperCase()}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      status.toUpperCase().replaceAll('_', ' '),
+                      style: const TextStyle(
+                        color: AppTheme.accent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 25),
 
                 // 🔹 ส่วนกลาง: โชว์รูปและชื่อสินค้า (ดึงข้อมูลจากตาราง items)
-               if (itemId.isNotEmpty)
+                if (itemId.isNotEmpty)
                   FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance.collection('items').doc(itemId).get(),
+                    future: FirebaseFirestore.instance
+                        .collection('items')
+                        .doc(itemId)
+                        .get(),
                     builder: (context, itemSnapshot) {
-                      if (itemSnapshot.connectionState == ConnectionState.waiting) {
+                      if (itemSnapshot.connectionState ==
+                          ConnectionState.waiting) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent)),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.accent,
+                            ),
+                          ),
                         );
                       }
-                      
+
                       if (!itemSnapshot.hasData || !itemSnapshot.data!.exists) {
-                        return const Text('Item details not found.', style: TextStyle(color: AppTheme.textMuted));
+                        return const Text(
+                          'Item details not found.',
+                          style: TextStyle(color: AppTheme.textMuted),
+                        );
                       }
 
-                      final itemData = itemSnapshot.data!.data() as Map<String, dynamic>;
+                      final itemData =
+                          itemSnapshot.data!.data() as Map<String, dynamic>;
                       final title = itemData['title'] ?? 'Unknown Item';
-                      
+
                       // 🔥 โค้ดส่วนที่แก้ใหม่: นักสืบหารูปภาพ!
                       String displayImageUrl = '';
-                      
+
                       // 1. ลองหาแบบ List (หลายรูป) ก่อน ถ้ามี ให้ดึงรูปตำแหน่งที่ 0 มา
-                      if (itemData['imageUrls'] != null && itemData['imageUrls'] is List && (itemData['imageUrls'] as List).isNotEmpty) {
+                      if (itemData['imageUrls'] != null &&
+                          itemData['imageUrls'] is List &&
+                          (itemData['imageUrls'] as List).isNotEmpty) {
                         displayImageUrl = itemData['imageUrls'][0].toString();
-                      } 
+                      }
                       // 2. ถ้าไม่มีแบบ List ลองหาแบบ String (รูปเดียว) ดั้งเดิม
-                      else if (itemData['imageUrl'] != null && itemData['imageUrl'] is String) {
+                      else if (itemData['imageUrl'] != null &&
+                          itemData['imageUrl'] is String) {
                         displayImageUrl = itemData['imageUrl'];
                       }
 
@@ -211,7 +252,10 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                                     width: 60,
                                     height: 60,
                                     color: AppTheme.border,
-                                    child: const Icon(Icons.image_not_supported, color: AppTheme.textMuted),
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      color: AppTheme.textMuted,
+                                    ),
                                   ),
                           ),
                           const SizedBox(width: 12),
@@ -221,23 +265,37 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                               title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ],
                       );
                     },
                   ),
-                
+
                 const Divider(height: 24, color: AppTheme.border),
 
                 // 🔹 ส่วนล่าง: ราคารวม
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Amount', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                    Text('฿${price.toStringAsFixed(0)}', 
-                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text(
+                      'Total Amount',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      '฿${price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ],
                 ),
               ],

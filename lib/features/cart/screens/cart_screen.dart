@@ -127,12 +127,15 @@ class CartScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            PrimaryButton(
+           PrimaryButton(
               label: 'Checkout Now',
               onTap: () {
                 if (cartItems.isNotEmpty) {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  context.push(RouteNames.order.path, extra: cartItems);
+                  context.push(RouteNames.order.path, extra: {
+                    'items': cartItems,
+                    'isFromCart': true, // บอกให้ OrderScreen รู้ว่ามาจากหน้าตะกร้า!
+                  });
                 }
               },
             ),

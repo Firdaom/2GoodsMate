@@ -142,7 +142,7 @@ class WatchlistScreen extends ConsumerWidget {
 
                   if (watchlist.isEmpty) {
                     return const EmptyState(
-                      icon: Icons.bookmark_add_outlined,
+                      icon: Icons.favorite_outline,
                       title: 'No items yet',
                       subtitle: 'Tap the heart on items\nto save them here',
                     );

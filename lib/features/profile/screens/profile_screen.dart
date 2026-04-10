@@ -118,7 +118,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(width: 4),
                       IconButton(
                         onPressed: () {
-                          context.push(RouteNames.chat.path, extra: 'Chat List');
+                          context.push(
+                            RouteNames.chat.path,
+                            extra: 'Chat List',
+                          );
                         },
                         icon: Stack(
                           clipBehavior: Clip.none,
@@ -139,7 +142,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   decoration: BoxDecoration(
                                     color: AppTheme.danger,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -337,6 +343,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.inventory_2_outlined,
                 label: 'My Listings',
                 onTap: () => context.push(RouteNames.myListings.path),
+              ),
+
+              SettingsRow(
+                icon: Icons.storefront_outlined, 
+                label: 'Switch Role', 
+                onTap: () {
+                  // TODO: ใส่ Logic สำหรับการสลับ Role ในอนาคต
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Switching to Seller Mode... (Coming Soon)',
+                      ),
+                    ),
+                  );
+                },
               ),
 
               SettingsRow(

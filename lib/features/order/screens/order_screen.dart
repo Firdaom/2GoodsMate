@@ -11,8 +11,13 @@ import 'package:anigoods/features/order/services/order_service.dart';
 
 class OrderScreen extends StatelessWidget {
   final List<ItemModel> items;
+  final bool isFromCart;
 
-  const OrderScreen({super.key, required this.items});
+ const OrderScreen({
+    super.key, 
+    required this.items,
+    this.isFromCart = false, //  (แปลว่ามาจากปุ่ม Order Now)
+  });
 
   String _formatPrice(double price) => price
       .toStringAsFixed(0)
@@ -223,7 +228,9 @@ class OrderScreen extends StatelessWidget {
                         Navigator.pop(context); // ปิดหน้าต่าง Loading
 
                       // ล้างตะกร้าเมื่อสั่งซื้อสำเร็จ
-                      CartService().clearCart();
+                      if (isFromCart) {
+                        CartService().clearCart();
+                      }
 
                       if (context.mounted) {
                         showDialog(
@@ -239,10 +246,10 @@ class OrderScreen extends StatelessWidget {
                                 onPressed: () {
                                   Navigator.pop(context);
                                   // วาร์ปกลับไปหน้าประวัติการสั่งซื้อ หรือ หน้าแรก
-                                  context.go('/home');
+                                  context.go(RouteNames.profile.path);
                                 },
                                 child: const Text(
-                                  'Back to Home',
+                                  'View Purchases',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),

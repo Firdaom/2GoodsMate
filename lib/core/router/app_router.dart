@@ -196,9 +196,13 @@ final appRouter = GoRouter(
       path: RouteNames.order.path,
       name: RouteNames.order.name,
       parentNavigatorKey: _rootNavigatorKey, 
-     builder: (context, state) {
-        final items = state.extra as List<ItemModel>; 
-        return OrderScreen(items: items);
+      builder: (context, state) {
+        // 1. แกะกล่อง Map เพื่อแยกรับ 2 ค่า (items และ isFromCart)
+        final extras = state.extra as Map<String, dynamic>; 
+        final items = extras['items'] as List<ItemModel>;
+        final isFromCart = extras['isFromCart'] as bool? ?? false;
+        
+        return OrderScreen(items: items, isFromCart: isFromCart);
       },
     ),
     GoRoute(
