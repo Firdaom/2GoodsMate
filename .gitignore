@@ -56,3 +56,5 @@ android/local.properties
 android/key.properties
 *.keystore
 *.jks
+
+.firebase/
