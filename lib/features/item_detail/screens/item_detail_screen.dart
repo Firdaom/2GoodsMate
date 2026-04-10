@@ -1,9 +1,10 @@
+import 'package:anigoods/core/services/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/features/report/screens/report_screen.dart';
-import 'package:go_router/go_router.dart'; 
+import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/router/app_router.dart';
 
 class ItemDetailScreen extends StatefulWidget {
@@ -31,41 +32,84 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _watchlisted = widget.isWatchlisted;
   }
 
+  void dispose() {
+    //ทันทีที่หน้านี้ถูกปิด (ทำลาย) ให้เคลียร์ SnackBar ทิ้งด้วย
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    super.dispose();
+  }
+
   void _toggle() {
     setState(() => _watchlisted = !_watchlisted);
     widget.onWatchlistToggle();
   }
 
-  //ฟังก์ชัน build หลัก 
   @override
- Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     final item = widget.item;
     return Scaffold(
       body: CustomScrollView(
-        slivers: [
-          _buildHeroImage(item), // ดึงส่วนรูปภาพมาแสดง
-          _buildItemDetails(item), // ดึงส่วนรายละเอียดมาแสดง
-        ],
+        slivers: [_buildHeroImage(item), _buildItemDetails(item)],
       ),
-      // Order button
       bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: AppTheme.background,
-          border: const Border(top: BorderSide(color: AppTheme.border)), // เส้นคั่นบางๆ ด้านบน
+          border: const Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.min, 
+            // 🔥 2. บังคับให้ความสูงของล่างสุดหดตัวลงมาพอดีกับปุ่ม (ห้ามขยายเต็มจอ)
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                child: PrimaryButton(
-                  label: 'Order Now',
-                  onTap: () {
-                    // 🚀 สั่งวิ่งไปหน้า Order พร้อมพกข้อมูล item ชิ้นนี้ไปด้วย
-                    context.push(RouteNames.order.path, extra: item);
-                  },
-                ),
+              Row(
+                children: [
+                  // 🛒 ปุ่ม Add to Cart
+                  Expanded(
+                    child: SizedBox(
+                      height: 52, 
+                      child: OutlinedButton(
+                        onPressed: () {
+                          CartService().addToCart(item);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${item.title} added to cart!'),
+                              duration: const Duration(seconds: 2),
+                              action: SnackBarAction(
+                                label: 'View Cart',
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  context.push('/cart'); 
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          // เอา padding เดิมออกได้เลยครับ เพราะเราบังคับความสูงด้วย SizedBox แทนแล้ว
+                          side: const BorderSide(color: AppTheme.accent),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Icon(Icons.add_shopping_cart, color: AppTheme.accent),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  
+                  // ปุ่ม Order Now
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
+                      height: 52, 
+                      child: PrimaryButton(
+                        label: 'Order Now',
+                        onTap: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar(); 
+                          context.push(RouteNames.order.path, extra: item);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -84,7 +128,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       backgroundColor: AppTheme.background,
       elevation: 0,
       leading: GestureDetector(
-        onTap: () => Navigator.pop(context),
+        onTap: () {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          Navigator.pop(context);
+        },
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -121,7 +168,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
           ),
         ),
-        // Report button
         GestureDetector(
           onTap: () {
             Navigator.push(
@@ -163,7 +209,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
             Text(
               item.title,
               style: const TextStyle(
@@ -213,8 +258,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Price + Condition cards
             Row(
               children: [
                 Expanded(
@@ -268,8 +311,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Description
             const _Label('DESCRIPTION'),
             const SizedBox(height: 6),
             Text(
@@ -281,8 +322,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
             ),
             const SizedBox(height: 14),
-
-            // Tags
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -312,27 +351,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   )
                   .toList(),
             ),
-
-            // Contact
-            if (item.contactLinks.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              const _Label('CONTACT SELLER'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: item.contactLinks
-                    .map((link) => ContactButton(link: link, onTap: () {}))
-                    .toList(),
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  //  Format ราคาและเวลา 
   String _fmt(double price) => price
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');

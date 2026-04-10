@@ -40,28 +40,35 @@ class HomeScreen extends ConsumerWidget {
     return query.orderBy(ItemFields.postedAt, descending: true);
   }
 
-  Widget _buildHeader(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        RichText(
-          text: const TextSpan(
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+ Widget _buildHeader(BuildContext context) => Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 15, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // โลโก้ 2GoodsMate
+          RichText(
+            text: const TextSpan(
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              children: [
+                TextSpan(text: '2Goods', style: TextStyle(color: AppTheme.textPrimary)),
+                TextSpan(text: 'Mate', style: TextStyle(color: AppTheme.accent)),
+              ],
+            ),
+          ),
+          // กลุ่มไอคอน: Notification & Cart
+          Row(
             children: [
-              TextSpan(text: '2Goods', style: TextStyle(color: AppTheme.textPrimary)),
-              TextSpan(text: 'Mate', style: TextStyle(color: AppTheme.accent)),
+              const CartIconButton(), // ตะกร้าสินค้า
+              IconButton(
+                onPressed: () => context.push(RouteNames.notifications.path),
+                icon: const Icon(Icons.notifications_active, color: AppTheme.textPrimary),
+              ),
+              
             ],
           ),
-        ),
-        GestureDetector(
-          onTap: () => context.push(RouteNames.notifications.path), 
-          child: const Icon(Icons.notifications_active, size: 22,color: AppTheme.accent),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
 
   Widget _renderItems(BuildContext context, List<ItemModel> items, List<String> watchlist) {
     return Column(

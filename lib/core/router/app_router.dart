@@ -1,4 +1,5 @@
 import 'package:anigoods/features/add_item/screens/addItem_screen.dart';
+import 'package:anigoods/features/chat/screens/chat_room_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +22,7 @@ import 'package:anigoods/features/profile/screens/my_listing_screen.dart';
 import 'package:anigoods/features/order/screens/order_screen.dart';
 import 'package:anigoods/features/order/screens/order_status_screen.dart';
 import 'package:anigoods/features/order/screens/purchase_history_screen.dart';
+import 'package:anigoods/features/cart/screens/cart_screen.dart';
 import 'dart:async';
 
 // สร้าง Navigator Key เพื่อแยกเลเยอร์ (Root = เต็มจอ, Shell = มีเมนูล่าง)
@@ -45,7 +47,9 @@ enum RouteNames {
   myListings,
   order,
   orderStatus,
-  purchaseHistory;
+  purchaseHistory,
+  chat,
+  cart;
 
   // Helper getter
   String get path {
@@ -84,6 +88,11 @@ enum RouteNames {
         return '/order-status';
       case RouteNames.purchaseHistory:
         return '/purchase-history';
+      case RouteNames.chat:
+        return '/chat';
+      case RouteNames.cart:
+        return '/cart';
+
     }
   }
 }
@@ -209,6 +218,19 @@ final appRouter = GoRouter(
         final initialIndex = (state.extra as int?) ?? 0;
         return PurchaseHistoryScreen(initialIndex: initialIndex);
       },
+    ),
+    GoRoute(
+      path: RouteNames.chat.path,
+      name: RouteNames.chat.name,
+      builder: (context, state) {
+        final sellerName = state.extra as String? ?? 'Seller';
+        return ChatRoomScreen(sellerName: sellerName);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.cart.path,
+      name: RouteNames.cart.name,
+      builder: (context, state) => const CartScreen(),
     ),
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)

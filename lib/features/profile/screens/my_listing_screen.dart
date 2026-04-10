@@ -46,7 +46,7 @@ class MyListingScreen extends StatelessWidget {
                 // 📦 ถ้ายังไม่เคยโพสต์ขายอะไรเลย
                 if (docs.isEmpty) {
                   return const EmptyState(
-                    emoji: '📦',
+                    icon: Icons.book_outlined,
                     title: 'No Listings Yet',
                     subtitle: 'Turn your collection into cash!\nStart selling today.',
                   );

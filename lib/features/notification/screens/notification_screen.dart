@@ -171,7 +171,7 @@ class _NotificationKeywordsScreenState
             Expanded(
               child: _keywords.isEmpty
                   ? const EmptyState(
-                      emoji: '🔍',
+                     icon: Icons.search_sharp,
                       title: 'No keywords yet',
                       subtitle: 'Add keywords to start tracking',
                     )
@@ -190,7 +190,7 @@ class _NotificationKeywordsScreenState
                         ),
                         child: Row(
                           children: [
-                            const Text('🔔', style: TextStyle(fontSize: 16)),
+                            const Icon(Icons.notifications, size: 16),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(

@@ -34,17 +34,17 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
   Future<void> _fetchOrderData() async {
     try {
       final db = FirebaseFirestore.instance;
-      
+
       // 1. ดึงออเดอร์
       final orderDoc = await db.collection('orders').doc(widget.orderId).get();
       if (!orderDoc.exists) throw Exception('Order not found');
-      
+
       final order = OrderModel.fromFirestore(orderDoc);
 
       // 2. ดึงข้อมูลสินค้าที่ผูกกับออเดอร์นี้
       final itemDoc = await db.collection('items').doc(order.itemId).get();
       if (!itemDoc.exists) throw Exception('Item not found');
-      
+
       // (สมมติว่าคุณมีฟังก์ชัน fromFirestore ใน ItemModel ด้วย)
       final item = ItemModel(
         id: itemDoc.id,
@@ -54,9 +54,11 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
         title: itemDoc.data()?['title'] ?? 'Unknown Item',
         description: itemDoc.data()?['description'] ?? '',
         price: (itemDoc.data()?['price'] ?? 0.0).toDouble(),
-        imageUrls: itemDoc.data()?['imageUrl'] != null ? [itemDoc.data()?['imageUrl']] : [],
+        imageUrls: itemDoc.data()?['imageUrl'] != null
+            ? [itemDoc.data()?['imageUrl']]
+            : [],
         category: itemDoc.data()?['category'] ?? '',
-        condition: itemDoc.data()?['condition'] ?? '', 
+        condition: itemDoc.data()?['condition'] ?? '',
         rarity: itemDoc.data()?['Rarity'] ?? '',
         tags: [],
         contactLinks: [],
@@ -73,7 +75,6 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
         _item = item;
         _isLoading = false;
       });
-
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -99,52 +100,72 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
         ),
       ),
       body: _buildBody(),
-      bottomNavigationBar: _order != null ? Container(
-        decoration: BoxDecoration(
-          color: AppTheme.background,
-          border: const Border(top: BorderSide(color: AppTheme.border)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                child: Row(
+      bottomNavigationBar: _order != null
+          ? Container(
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                border: const Border(top: BorderSide(color: AppTheme.border)),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 🔥 เพิ่มปุ่ม Cancel Order (โชว์เฉพาะตอน To Pay หรือ To Ship)
-                    if (_order!.status == 'to_pay' || _order!.status == 'to_ship') ...[
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _showCancelDialog(context), // เรียกฟังก์ชันกดยกเลิก
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: const BorderSide(color: AppTheme.danger), // ขอบสีแดง
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Cancel Order', style: TextStyle(color: AppTheme.danger, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                      child: Row(
+                        children: [
+                          // 🔥 เพิ่มปุ่ม Cancel Order (โชว์เฉพาะตอน To Pay หรือ To Ship)
+                          if (_order!.status == 'to_pay' ||
+                              _order!.status == 'to_ship') ...[
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => _showCancelDialog(
+                                  context,
+                                ), // เรียกฟังก์ชันกดยกเลิก
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  side: const BorderSide(
+                                    color: AppTheme.danger,
+                                  ), // ขอบสีแดง
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel Order',
+                                  style: TextStyle(
+                                    color: AppTheme.danger,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
 
-                    // ปุ่ม Contact Seller (โชว์ตลอด)
-                    Expanded(
-                      flex: 2, // ให้ปุ่มแชทกว้างกว่านิดนึง
-                      child: PrimaryButton(
-                        label: 'Contact Seller',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening chat...')));
-                        },
+                          // ปุ่ม Contact Seller (โชว์ตลอด)
+                          Expanded(
+                            flex: 2, // ให้ปุ่มแชทกว้างกว่านิดนึง
+                            child: PrimaryButton(
+                              label: 'Contact Seller',
+                              onTap: () {
+                                context.push(
+                                  RouteNames.chat.path,
+                                  extra: _item?.sellerName ?? 'Seller',
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ) : null,
+            )
+          : null,
     );
   }
 
@@ -154,33 +175,41 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Order?'),
-        content: const Text('Are you sure you want to cancel this order? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to cancel this order? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext), // ปิด Dialog เฉยๆ
-            child: const Text('No, Keep It', style: TextStyle(color: AppTheme.textMuted)),
+            child: const Text(
+              'No, Keep It',
+              style: TextStyle(color: AppTheme.textMuted),
+            ),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(dialogContext); // ปิด Dialog 
-              
+              Navigator.pop(dialogContext); // ปิด Dialog
+
               // โชว์วงกลมโหลด
               setState(() => _isLoading = true);
-              
+
               try {
                 // อัปเดตสถานะใน Firebase เป็น 'cancelled'
                 await FirebaseFirestore.instance
                     .collection('orders')
                     .doc(widget.orderId)
                     .update({'status': 'cancelled'});
-                
+
                 // แจ้งเตือนว่ายกเลิกสำเร็จ
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Order cancelled successfully'), backgroundColor: AppTheme.danger),
+                    const SnackBar(
+                      content: Text('Order cancelled successfully'),
+                      backgroundColor: AppTheme.danger,
+                    ),
                   );
                   // กลับไปหน้าก่อนหน้า (น่าจะหน้า Purchase History)
-                  Navigator.pop(context); 
+                  Navigator.pop(context);
                 }
               } catch (e) {
                 if (mounted) {
@@ -191,7 +220,13 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                 }
               }
             },
-            child: const Text('Yes, Cancel', style: TextStyle(color: AppTheme.danger, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Yes, Cancel',
+              style: TextStyle(
+                color: AppTheme.danger,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -200,17 +235,24 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.accent),
+      );
     }
     if (_errorMessage.isNotEmpty) {
-      return Center(child: Text('Error: $_errorMessage', style: const TextStyle(color: Colors.red)));
+      return Center(
+        child: Text(
+          'Error: $_errorMessage',
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
     }
     if (_order == null || _item == null) {
       return const Center(child: Text('Order details not found.'));
     }
 
     // ตัวแปรเช็คสถานะออเดอร์
-    final status = _order!.status; 
+    final status = _order!.status;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -230,9 +272,20 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Order ID', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-                    Text('#${_order!.id.substring(0, 8).toUpperCase()}', // ดึง ID จริงมาโชว์ 8 ตัวแรก
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.accent)),
+                    const Text(
+                      'Order ID',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      '#${_order!.id.substring(0, 8).toUpperCase()}', // ดึง ID จริงมาโชว์ 8 ตัวแรก
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.accent,
+                      ),
+                    ),
                   ],
                 ),
                 const Divider(height: 24),
@@ -244,10 +297,20 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_item!.title, maxLines: 1, overflow: TextOverflow.ellipsis, 
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            _item!.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                           const SizedBox(height: 4),
-                          Text('Seller: ${_item!.sellerName}', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                          Text(
+                            'Seller: ${_item!.sellerName}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -274,7 +337,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                   title: 'Order Placed',
                   subtitle: 'Waiting for seller to confirm.',
                   time: 'Completed',
-                  isActive: status == 'to_pay', 
+                  isActive: status == 'to_pay',
                   isPending: false,
                   isLast: false,
                 ),
@@ -283,7 +346,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                   title: 'Payment Confirmed',
                   subtitle: 'Payment has been verified.',
                   time: status == 'to_pay' ? 'Pending' : 'Completed',
-                  isActive: status == 'to_ship', 
+                  isActive: status == 'to_ship',
                   isPending: status == 'to_pay',
                   isLast: false,
                 ),
@@ -291,9 +354,11 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                   icon: Icons.local_shipping_outlined,
                   title: 'Shipped',
                   subtitle: 'Seller is preparing the package.',
-                  time: (status == 'to_pay' || status == 'to_ship') ? 'Pending' : 'Completed',
+                  time: (status == 'to_pay' || status == 'to_ship')
+                      ? 'Pending'
+                      : 'Completed',
                   isActive: status == 'to_receive',
-                  isPending: status == 'to_pay' || status == 'to_ship', 
+                  isPending: status == 'to_pay' || status == 'to_ship',
                   isLast: false,
                 ),
                 _StatusStep(
@@ -314,7 +379,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
   }
 }
 
-// ─── Widget _StatusStep 
+// ─── Widget _StatusStep
 class _StatusStep extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -336,8 +401,12 @@ class _StatusStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color iconColor = isActive ? AppTheme.accent : (isPending ? AppTheme.border : AppTheme.success);
-    final Color bgColor = isActive ? AppTheme.accentLight : (isPending ? Colors.transparent : AppTheme.success.withOpacity(0.1));
+    final Color iconColor = isActive
+        ? AppTheme.accent
+        : (isPending ? AppTheme.border : AppTheme.success);
+    final Color bgColor = isActive
+        ? AppTheme.accentLight
+        : (isPending ? Colors.transparent : AppTheme.success.withOpacity(0.1));
     final Color lineColor = isPending ? AppTheme.border : AppTheme.success;
 
     return IntrinsicHeight(
@@ -347,7 +416,8 @@ class _StatusStep extends StatelessWidget {
           Column(
             children: [
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: bgColor,
                   shape: BoxShape.circle,
@@ -378,21 +448,35 @@ class _StatusStep extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.w600,
                           fontSize: 15,
-                          color: isPending ? AppTheme.textMuted : AppTheme.textPrimary,
+                          color: isPending
+                              ? AppTheme.textMuted
+                              : AppTheme.textPrimary,
                         ),
                       ),
                       Text(
                         time,
-                        style: TextStyle(fontSize: 12, color: isPending ? AppTheme.border : AppTheme.textMuted),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isPending
+                              ? AppTheme.border
+                              : AppTheme.textMuted,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 12, color: isPending ? AppTheme.border : AppTheme.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isPending
+                          ? AppTheme.border
+                          : AppTheme.textSecondary,
+                    ),
                   ),
                 ],
               ),

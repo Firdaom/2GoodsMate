@@ -1,8 +1,9 @@
+import 'package:anigoods/core/router/app_router.dart';
+import 'package:anigoods/core/services/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
-
-
+import 'package:go_router/go_router.dart';
 
 // ─── Image Carousel ───────────────────────────────────────
 class ImageCarousel extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
     super.dispose();
   }
 
-  // เรียกใช้ widget.imageUrls 
+  // เรียกใช้ widget.imageUrls
   void _openFullScreen(BuildContext context, int index) {
     Navigator.push(
       context,
@@ -60,9 +61,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
           color: AppTheme.accentLight,
           borderRadius: BorderRadius.circular(widget.borderRadius),
         ),
-        child: const Center(
-          child: Text('🎁', style: TextStyle(fontSize: 64)),
-        ),
+        child: const Center(child: Text('🎁', style: TextStyle(fontSize: 64))),
       );
     }
 
@@ -107,7 +106,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
             child: PageView.builder(
               controller: _pageController,
               physics: const BouncingScrollPhysics(), // เลื่อนหนึบขึ้น
-              pageSnapping: true, 
+              pageSnapping: true,
               onPageChanged: (index) {
                 setState(() => _currentPage = index);
               },
@@ -174,6 +173,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
     );
   }
 }
+
 // ─── Item Image ───────────────────────────────────────────
 class ItemImage extends StatelessWidget {
   final List<String> imageUrls;
@@ -194,7 +194,8 @@ class ItemImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Container(
-        width: size, height: size,
+        width: size,
+        height: size,
         color: AppTheme.accentLight,
         child: imageUrl.isNotEmpty
             ? Image.network(
@@ -205,7 +206,8 @@ class ItemImage extends StatelessWidget {
                     ? child
                     : const Center(
                         child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppTheme.accent,
+                          strokeWidth: 2,
+                          color: AppTheme.accent,
                         ),
                       ),
               )
@@ -218,9 +220,8 @@ class ItemImage extends StatelessWidget {
 class _ImageFallback extends StatelessWidget {
   const _ImageFallback();
   @override
-  Widget build(BuildContext context) => const Center(
-        child: Text('🎁', style: TextStyle(fontSize: 28)),
-      );
+  Widget build(BuildContext context) =>
+      const Center(child: Text('🎁', style: TextStyle(fontSize: 28)));
 }
 
 // ─── Rarity Badge ─────────────────────────────────────────
@@ -241,8 +242,10 @@ class RarityBadge extends StatelessWidget {
       child: Text(
         rarity.toUpperCase(),
         style: TextStyle(
-          fontSize: 9, fontWeight: FontWeight.w700,
-          color: color, letterSpacing: 0.8,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.8,
         ),
       ),
     );
@@ -260,15 +263,11 @@ class VerifiedBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: const BoxDecoration(
-        color: AppTheme.verified, 
+        color: AppTheme.verified,
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: Icon(
-          Icons.check,
-          color: Colors.white,
-          size: size * 0.7,
-        ),
+        child: Icon(Icons.check, color: Colors.white, size: size * 0.7),
       ),
     );
   }
@@ -278,7 +277,11 @@ class VerifiedBadge extends StatelessWidget {
 class ConditionWithRarity extends StatelessWidget {
   final String condition;
   final String rarity;
-  const ConditionWithRarity({super.key, required this.condition, required this.rarity});
+  const ConditionWithRarity({
+    super.key,
+    required this.condition,
+    required this.rarity,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -286,18 +289,23 @@ class ConditionWithRarity extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 7, height: 7,
+          width: 7,
+          height: 7,
           decoration: BoxDecoration(
             color: conditionColor(condition),
             shape: BoxShape.circle,
           ),
         ),
         const SizedBox(width: 4),
-        Text(condition,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+        Text(
+          condition,
+          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+        ),
         const SizedBox(width: 6),
-        const Text('•',
-            style: TextStyle(fontSize: 9, color: AppTheme.textMuted)),
+        const Text(
+          '•',
+          style: TextStyle(fontSize: 9, color: AppTheme.textMuted),
+        ),
         const SizedBox(width: 6),
         RarityBadge(rarity: rarity),
       ],
@@ -334,7 +342,8 @@ class ItemCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8, offset: const Offset(0, 2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -352,14 +361,18 @@ class ItemCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
                       color: AppTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${item.series} • ${item.category}',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textMuted,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Row(
@@ -393,20 +406,27 @@ class ItemCard extends StatelessWidget {
                           Text(
                             '฿${_formatPrice(item.price)}',
                             style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
                               color: AppTheme.accent,
                             ),
                           ),
                           const SizedBox(height: 4),
                           ConditionWithRarity(
-                              condition: item.condition, rarity: item.rarity),
+                            condition: item.condition,
+                            rarity: item.rarity,
+                          ),
                         ],
                       ),
                       GestureDetector(
                         onTap: onWatchlistToggle,
                         child: Icon(
-                          isWatchlisted ? Icons.favorite : Icons.favorite_border,
-                          color: isWatchlisted ? AppTheme.heart : AppTheme.textMuted,
+                          isWatchlisted
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: isWatchlisted
+                              ? AppTheme.heart
+                              : AppTheme.textMuted,
                           size: 20,
                         ),
                       ),
@@ -421,11 +441,9 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  String _formatPrice(double price) =>
-      price.toStringAsFixed(0).replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-        (m) => '${m[1]},',
-      );
+  String _formatPrice(double price) => price
+      .toStringAsFixed(0)
+      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 }
 
 // ─── Settings Row ─────────────────────────────────────────
@@ -440,7 +458,7 @@ class SettingsRow extends StatelessWidget {
     required this.icon,
     required this.label,
     this.danger = false,
-    this.onTap, 
+    this.onTap,
   });
 
   @override
@@ -455,7 +473,8 @@ class SettingsRow extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 34, height: 34,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: danger
                     ? AppTheme.danger.withOpacity(0.1)
@@ -464,8 +483,8 @@ class SettingsRow extends StatelessWidget {
               ),
               child: Center(
                 child: Icon(
-                  icon, 
-                  size: 18, 
+                  icon,
+                  size: 18,
                   color: danger ? AppTheme.danger : AppTheme.accent,
                 ),
               ),
@@ -475,14 +494,18 @@ class SettingsRow extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                   color: danger ? AppTheme.danger : AppTheme.textPrimary,
                 ),
               ),
             ),
             if (!danger)
-              const Icon(Icons.chevron_right,
-                  color: AppTheme.textMuted, size: 18),
+              const Icon(
+                Icons.chevron_right,
+                color: AppTheme.textMuted,
+                size: 18,
+              ),
           ],
         ),
       ),
@@ -516,16 +539,20 @@ class CategoryChip extends StatelessWidget {
             color: selected ? AppTheme.accent : AppTheme.border,
           ),
           boxShadow: selected
-              ? [BoxShadow(
-                  color: AppTheme.accent.withOpacity(0.2),
-                  blurRadius: 6, offset: const Offset(0, 2),
-                )]
+              ? [
+                  BoxShadow(
+                    color: AppTheme.accent.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 12, fontWeight: FontWeight.w600,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
             color: selected ? Colors.white : AppTheme.textSecondary,
           ),
         ),
@@ -542,18 +569,18 @@ class ContactButton extends StatelessWidget {
   const ContactButton({super.key, required this.link, required this.onTap});
 
   static const _platforms = {
-    'facebook':  {'emoji': '📘', 'name': 'Facebook'},
-    'twitter':   {'emoji': '🐦', 'name': 'X (Twitter)'},
+    'facebook': {'emoji': '📘', 'name': 'Facebook'},
+    'twitter': {'emoji': '🐦', 'name': 'X (Twitter)'},
     'instagram': {'emoji': '📸', 'name': 'Instagram'},
-    'line':      {'emoji': '💬', 'name': 'LINE'},
-    'shopee':    {'emoji': '🛒', 'name': 'Shopee'},
-    'lazada':    {'emoji': '🛍️', 'name': 'Lazada'},
+    'line': {'emoji': '💬', 'name': 'LINE'},
+    'shopee': {'emoji': '🛒', 'name': 'Shopee'},
+    'lazada': {'emoji': '🛍️', 'name': 'Lazada'},
   };
 
   @override
   Widget build(BuildContext context) {
-    final platformInfo = _platforms[link.platform] ??
-        {'emoji': '🔗', 'name': link.platform};
+    final platformInfo =
+        _platforms[link.platform] ?? {'emoji': '🔗', 'name': link.platform};
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -565,7 +592,8 @@ class ContactButton extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 4, offset: const Offset(0, 1),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -577,7 +605,8 @@ class ContactButton extends StatelessWidget {
             Text(
               platformInfo['name']!,
               style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
             ),
@@ -588,18 +617,13 @@ class ContactButton extends StatelessWidget {
   }
 }
 
-
 // ─────────shared buttons──────────────────────────────────────────────
-    class PrimaryButton extends StatelessWidget {
+class PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
   final bool loading;
 
-  const PrimaryButton({
-    required this.label,
-    this.onTap,
-    this.loading = false,
-  });
+  const PrimaryButton({required this.label, this.onTap, this.loading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -613,28 +637,36 @@ class ContactButton extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: enabled
               ? const LinearGradient(
-                  colors: [AppTheme.accent, AppTheme.accentDark])
+                  colors: [AppTheme.accent, AppTheme.accentDark],
+                )
               : null,
           color: enabled ? null : AppTheme.border,
           borderRadius: BorderRadius.circular(14),
           boxShadow: enabled
-              ? [BoxShadow(
-                  color: AppTheme.accent.withOpacity(0.25),
-                  blurRadius: 16, offset: const Offset(0, 4),
-                )]
+              ? [
+                  BoxShadow(
+                    color: AppTheme.accent.withOpacity(0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
               : null,
         ),
         child: Center(
           child: loading
               ? const SizedBox(
-                  width: 20, height: 20,
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white,
-                  ))
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : Text(
                   label,
                   style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                     color: enabled ? Colors.white : AppTheme.textMuted,
                   ),
                 ),
@@ -644,19 +676,18 @@ class ContactButton extends StatelessWidget {
   }
 }
 
-
 // ══════════════════════════════════════════════════════════
 // SHARED UI COMPONENTS (ใช้ได้ทุกหน้า)
 // ══════════════════════════════════════════════════════════
 
 class EmptyState extends StatelessWidget {
-  final String emoji;
+  final IconData icon; // เปลี่ยนจาก String emoji เป็น IconData
   final String title;
   final String subtitle;
 
   const EmptyState({
     super.key,
-    required this.emoji,
+    required this.icon, // เปลี่ยนชื่อให้ตรงกัน
     required this.title,
     required this.subtitle,
   });
@@ -666,21 +697,26 @@ class EmptyState extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 40)),
-        const SizedBox(height: 12),
+        // เปลี่ยนจาก Text เป็น Icon widget
+        Icon(
+          icon, 
+          size: 64, 
+          color: AppTheme.border, // ใช้สีเทาๆ ให้ดูเป็นหน้าว่างๆ
+        ),
+        const SizedBox(height: 16),
         Text(
           title,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textMuted,
+            color: AppTheme.textPrimary, // ปรับสีให้เข้มขึ้นนิดนึง
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           subtitle,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+          style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
         ),
       ],
     ),
@@ -689,7 +725,7 @@ class EmptyState extends StatelessWidget {
 
 class SectionLabel extends StatelessWidget {
   final String text;
-  
+
   const SectionLabel(this.text, {super.key});
 
   @override
@@ -703,7 +739,6 @@ class SectionLabel extends StatelessWidget {
     ),
   );
 }
-
 
 // ─── Full Screen Image Viewer ─────────────────────────────
 class FullScreenImageViewer extends StatelessWidget {
@@ -730,15 +765,13 @@ class FullScreenImageViewer extends StatelessWidget {
         physics: const BouncingScrollPhysics(), // เลื่อนแล้วมีเด้งๆ ขอบจอ
         itemCount: imageUrls.length,
         itemBuilder: (context, index) {
-          return InteractiveViewer( // ซูมรูปได้
+          return InteractiveViewer(
+            // ซูมรูปได้
             panEnabled: true,
             minScale: 1.0, // ย่อสุดได้เท่าขนาดปกติ
             maxScale: 4.0, // ซูมเข้าไปได้สูงสุด 4 เท่า
             child: Center(
-              child: Image.network(
-                imageUrls[index],
-                fit: BoxFit.contain,
-              ),
+              child: Image.network(imageUrls[index], fit: BoxFit.contain),
             ),
           );
         },
@@ -747,3 +780,58 @@ class FullScreenImageViewer extends StatelessWidget {
   }
 }
 
+// ─── Cart Icon Button (With Badge) ────────────────────────
+class CartIconButton extends StatelessWidget {
+  const CartIconButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () => context.push('/cart'),
+      // ใช้ ListenableBuilder ครอบไว้ ดักฟัง CartService แบบ Real-time
+      icon: ListenableBuilder(
+        listenable: CartService(),
+        builder: (context, child) {
+          final cartCount = CartService().items.length;
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(
+                Icons.shopping_cart_outlined,
+                color: AppTheme.textPrimary,
+                size: 24,
+              ),
+              if (cartCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.danger,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: Text(
+                      cartCount > 99 ? '99+' : '$cartCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}

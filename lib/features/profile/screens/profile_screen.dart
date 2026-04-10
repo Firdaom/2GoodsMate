@@ -16,7 +16,6 @@ import 'package:anigoods/features/profile/screens/edit_profile_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 // ════════════════════════════════════════════════════════
 // PROFILE
 // ════════════════════════════════════════════════════════
@@ -35,6 +34,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _toRateCount = 0;
   String? _latestOrderId;
 
+  int unreadMessages = 0;
+
   @override
   void initState() {
     super.initState();
@@ -44,8 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _load() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    final userRepo = UserRepository(); 
-    final user = await userRepo.getUserProfile(uid); 
+    final userRepo = UserRepository();
+    final user = await userRepo.getUserProfile(uid);
     try {
       final orderSnapshot = await FirebaseFirestore.instance
           .collection('orders')
@@ -58,14 +59,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (orderSnapshot.docs.isNotEmpty) {
         latestId = orderSnapshot.docs.first.id; // เก็บ ID ออเดอร์ล่าสุดไว้
-        
+
         // นับจำนวนสถานะต่างๆ
         for (var doc in orderSnapshot.docs) {
           final status = doc.data()['status'] as String?;
-          if (status == 'to_pay') pay++;
-          else if (status == 'to_ship') ship++;
-          else if (status == 'to_receive') receive++;
-          else if (status == 'completed') rate++;
+          if (status == 'to_pay')
+            pay++;
+          else if (status == 'to_ship')
+            ship++;
+          else if (status == 'to_receive')
+            receive++;
+          else if (status == 'completed')
+            rate++;
         }
       }
 
@@ -94,18 +99,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                ),
+              // 🔝 ส่วน Header: Profile Title + Cart + Chat
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Profile',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  // 🛒 & 💬 กลุ่มไอคอนด้านขวา
+                  Row(
+                    children: [
+                      const CartIconButton(), // ใช้ตัวที่เราเพิ่งสร้างไว้ใน Common Widgets
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: () {
+                          context.push('/chat-room', extra: 'Chat List');
+                        },
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(
+                              Icons.chat_outlined,
+                              color: AppTheme.textPrimary,
+                              size: 24,
+                            ),
+                            // 🔴 จุดแจ้งเตือนแชท
+                            if (unreadMessages > 0)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.danger,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
-              // Avatar
+              // 👤 ส่วนข้อมูล User (Avatar)
               Center(
                 child: Column(
                   children: [
@@ -171,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 28),
 
-            // 🛒 แผงแสดงสถานะออเดอร์ (สไตล์ Shopee)
+              // 🛒 แผงแสดงสถานะออเดอร์ (สไตล์ Shopee)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -184,16 +231,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('My Purchases', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const Text(
+                          'My Purchases',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         GestureDetector(
                           onTap: () {
                             // 🔥 1. เปลี่ยนให้เด้งไปหน้า Purchase History แท็บ All (index 0)
-                            context.push(RouteNames.purchaseHistory.path, extra: 0);
+                            context.push(
+                              RouteNames.purchaseHistory.path,
+                              extra: 0,
+                            );
                           },
                           child: Row(
                             children: const [
-                              Text('View Purchase History', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                              Icon(Icons.chevron_right, size: 16, color: AppTheme.textMuted),
+                              Text(
+                                'View Purchase History',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textMuted,
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 16,
+                                color: AppTheme.textMuted,
+                              ),
                             ],
                           ),
                         ),
@@ -205,43 +271,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _OrderStatusIcon(
-                          icon: Icons.account_balance_wallet_outlined, 
-                          label: 'To Pay', 
-                          count: _toPayCount, 
+                          icon: Icons.account_balance_wallet_outlined,
+                          label: 'To Pay',
+                          count: _toPayCount,
                           // 🔥 2. ส่ง index 1 ไปเปิดแท็บ To Pay
-                          onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 1),
+                          onTap: () => context.push(
+                            RouteNames.purchaseHistory.path,
+                            extra: 1,
+                          ),
                         ),
                         _OrderStatusIcon(
-                          icon: Icons.inventory_2_outlined, 
-                          label: 'To Ship', 
-                          count: _toShipCount, 
+                          icon: Icons.inventory_2_outlined,
+                          label: 'To Ship',
+                          count: _toShipCount,
                           // 🔥 3. ส่ง index 2 ไปเปิดแท็บ To Ship
-                          onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 2),
+                          onTap: () => context.push(
+                            RouteNames.purchaseHistory.path,
+                            extra: 2,
+                          ),
                         ),
                         _OrderStatusIcon(
-                          icon: Icons.local_shipping_outlined, 
-                          label: 'To Receive', 
-                          count: _toReceiveCount, 
+                          icon: Icons.local_shipping_outlined,
+                          label: 'To Receive',
+                          count: _toReceiveCount,
                           // 🔥 4. ส่ง index 3 ไปเปิดแท็บ To Receive
-                          onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 3),
+                          onTap: () => context.push(
+                            RouteNames.purchaseHistory.path,
+                            extra: 3,
+                          ),
                         ),
                         _OrderStatusIcon(
-                          icon: Icons.star_border, 
-                          label: 'To Rate', 
-                          count: _toRateCount, 
+                          icon: Icons.star_border,
+                          label: 'To Rate',
+                          count: _toRateCount,
                           // 🔥 5. ส่ง index 4 ไปเปิดแท็บ To Rate
-                          onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 4),
+                          onTap: () => context.push(
+                            RouteNames.purchaseHistory.path,
+                            extra: 4,
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24), 
+              const SizedBox(height: 24),
 
-             SectionLabel( 'ACCOUNT'),
+              SectionLabel('ACCOUNT'),
               const SizedBox(height: 8),
-              
+
               SettingsRow(
                 icon: Icons.person_outline,
                 label: 'Personal Information',
@@ -255,19 +333,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _load();
                 },
               ),
-               SettingsRow(
+              SettingsRow(
                 icon: Icons.inventory_2_outlined,
                 label: 'My Listings',
                 onTap: () => context.push(RouteNames.myListings.path),
-             
               ),
 
-            
-              
               SettingsRow(
                 icon: Icons.settings_outlined,
                 label: 'Settings',
-                onTap: () => context.push(RouteNames.settings.path), 
+                onTap: () => context.push(RouteNames.settings.path),
               ),
             ],
           ),
@@ -276,7 +351,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-
 
 // ─── Widget สำหรับสร้างไอคอนสถานะ + ตัวเลขแจ้งเตือน (Badge) ────────────────
 class _OrderStatusIcon extends StatelessWidget {
@@ -313,13 +387,18 @@ class _OrderStatusIcon extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppTheme.danger, // ใช้สีแดงใน Theme ของคุณ
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.surface, width: 2), // ขอบขาวให้ดูมีมิติ
+                      border: Border.all(
+                        color: AppTheme.surface,
+                        width: 2,
+                      ), // ขอบขาวให้ดูมีมิติ
                     ),
                     child: Text(
-                      count > 99 ? '99+' : count.toString(), // ถ้าเกิน 99 ให้โชว์ 99+
+                      count > 99
+                          ? '99+'
+                          : count.toString(), // ถ้าเกิน 99 ให้โชว์ 99+
                       style: const TextStyle(
-                        color: Colors.white, 
-                        fontSize: 9, 
+                        color: Colors.white,
+                        fontSize: 9,
                         fontWeight: FontWeight.w900,
                         height: 1, // จัดให้อยู่ตรงกลางวงกลม
                       ),
@@ -331,7 +410,11 @@ class _OrderStatusIcon extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

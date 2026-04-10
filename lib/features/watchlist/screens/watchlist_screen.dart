@@ -27,8 +27,8 @@ class WatchlistScreen extends ConsumerWidget {
     });
   }
 
-  Widget _buildHeader(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+ Widget _buildHeader(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 10, 16), // ปรับ padding ขวาให้พอดีกับกลุ่มไอคอน
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -40,15 +40,22 @@ class WatchlistScreen extends ConsumerWidget {
                 color: AppTheme.textPrimary,
               ),
             ),
-            GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddItemScreen()),
-              ),
-              child: const Icon(
-                Icons.add_box_rounded, 
-                size: 28,
-                color: AppTheme.accent),
+            // 🛒 & 💬 กลุ่มไอคอนด้านขวา 
+            Row(
+              children: [
+                const CartIconButton(), // ปุ่มตะกร้าจาก Common Widgets
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: () {
+                    context.push('/chat-room', extra: 'Chat List');
+                  },
+                  icon: const Icon(
+                    Icons.chat_outlined,
+                    color: AppTheme.textPrimary,
+                    size: 24,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -135,7 +142,7 @@ class WatchlistScreen extends ConsumerWidget {
 
                   if (watchlist.isEmpty) {
                     return const EmptyState(
-                      emoji: '🔖',
+                      icon: Icons.bookmark_add_outlined,
                       title: 'No items yet',
                       subtitle: 'Tap the heart on items\nto save them here',
                     );

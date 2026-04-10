@@ -1,3 +1,4 @@
+import 'package:anigoods/core/services/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
@@ -185,6 +186,9 @@ class OrderScreen extends StatelessWidget {
                     if (context.mounted) Navigator.pop(context);
 
                     if (orderId != null && context.mounted) {
+
+                      CartService().clearCart(); 
+       
                       // ถ้าสำเร็จ โชว์ Dialog สวยๆ
                       showDialog(
                         context: context,
