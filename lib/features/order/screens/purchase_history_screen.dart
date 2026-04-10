@@ -219,7 +219,7 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                     },
                   ),
                 
-                const Divider(height: 24),
+                const Divider(height: 24, color: AppTheme.border),
 
                 // 🔹 ส่วนล่าง: ราคารวม
                 Row(
