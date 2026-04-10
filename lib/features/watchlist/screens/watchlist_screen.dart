@@ -45,7 +45,10 @@ class WatchlistScreen extends ConsumerWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const AddItemScreen()),
               ),
-              child: const Text('➕', style: TextStyle(fontSize: 24)),
+              child: const Icon(
+                Icons.add_box_rounded, 
+                size: 28,
+                color: AppTheme.accent),
             ),
           ],
         ),
@@ -94,7 +97,7 @@ class WatchlistScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 🔥 1. ดึงสถานะจาก Provider ฝั่ง Watchlist เท่านั้น
+    //ดึงสถานะจาก Provider ฝั่ง Watchlist เท่านั้น
     final query = ref.watch(watchlistSearchQueryProvider);
     final category = ref.watch(watchlistCategoryProvider);
     final rarity = ref.watch(watchlistRarityProvider);
@@ -111,7 +114,6 @@ class WatchlistScreen extends ConsumerWidget {
           children: [
             _buildHeader(context),
             
-            // 🔥 2. เรียกใช้ Widget ส่วนกลาง และบอกว่าเป็นหน้า Watchlist
             const SearchAndFilterWidget(isWatchlist: true),
             
             const SizedBox(height: 16),

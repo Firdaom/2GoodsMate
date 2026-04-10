@@ -57,7 +57,7 @@ class HomeScreen extends ConsumerWidget {
         ),
         GestureDetector(
           onTap: () => context.push(RouteNames.notifications.path), 
-          child: const Text('🔔', style: TextStyle(fontSize: 22)),
+          child: const Icon(Icons.notifications_active, size: 22,color: AppTheme.accent),
         ),
       ],
     ),

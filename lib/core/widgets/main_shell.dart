@@ -57,12 +57,13 @@ class _MainShellState extends State<MainShell> {
         ),
         child: SafeArea(
           child: NavigationBar(
+            height: 60,
             selectedIndex: _selectedIndex,
             onDestinationSelected: _onDestinationSelected,
             backgroundColor: Colors.transparent,
             indicatorColor: AppTheme.accentLight,
             elevation: 0,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined, color: AppTheme.textMuted),

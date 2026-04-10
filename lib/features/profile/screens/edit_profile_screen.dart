@@ -153,9 +153,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                               )
                             : const Center(
-                                child: Text(
-                                  '🎨',
-                                  style: TextStyle(fontSize: 50),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: AppTheme.textMuted,
                                 ),
                               ),
                       ),

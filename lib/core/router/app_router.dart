@@ -17,6 +17,7 @@ import 'package:anigoods/core/widgets/main_shell.dart';
 import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/profile/screens/setting_screen.dart';
 import 'package:anigoods/features/profile/screens/edit_profile_screen.dart';
+import 'package:anigoods/features/profile/screens/my_listing_screen.dart';
 import 'dart:async';
 
 // สร้าง Navigator Key เพื่อแยกเลเยอร์ (Root = เต็มจอ, Shell = มีเมนูล่าง)
@@ -37,7 +38,8 @@ enum RouteNames {
   editProfile, 
   notifications,
   addItem,
-  settings;   
+  settings,
+  myListings;
 
   // Helper getter
   String get path {
@@ -68,6 +70,8 @@ enum RouteNames {
         return '/notifications';
       case RouteNames.addItem:
         return '/add-item';
+      case RouteNames.myListings:
+        return '/my-listings';
     }
   }
 }
@@ -154,6 +158,18 @@ final appRouter = GoRouter(
           onWatchlistToggle: extras['onWatchlistToggle'] as VoidCallback,
         );
       },
+    ),
+    GoRoute(
+      path: RouteNames.myListings.path,
+      name: RouteNames.myListings.name,
+      parentNavigatorKey: _rootNavigatorKey, 
+      builder: (context, state) => const MyListingScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settings.path,
+      name: RouteNames.settings.name,
+      parentNavigatorKey: _rootNavigatorKey, 
+      builder: (context, state) => const SettingsScreen(),
     ),
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)

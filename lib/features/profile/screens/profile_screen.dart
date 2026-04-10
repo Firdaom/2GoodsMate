@@ -1,3 +1,4 @@
+import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/features/profile/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -92,7 +93,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             )
                           : const Center(
-                              child: Text('🎨', style: TextStyle(fontSize: 38)),
+                              child: Icon(
+                                Icons.person,
+                                size: 38,
+                                color: AppTheme.border,
+                              ),
                             ),
                     ),
                     const SizedBox(height: 12),
@@ -124,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 8),
               
               SettingsRow(
-                emoji: '👤',
+                icon: Icons.person_outline,
                 label: 'Personal Information',
                 onTap: () async {
                   // 👇 1. เพิ่ม rootNavigator: true ตรงนี้ เพื่อให้ Bottom Bar หายไปตอนแก้โปรไฟล์
@@ -136,13 +141,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _load();
                 },
               ),
-              const SettingsRow(emoji: '❤️', label: 'My Watchlist'),
-              const SettingsRow(emoji: '📦', label: 'My Listings'),
+               SettingsRow(
+                icon: Icons.inventory_2_outlined,
+                label: 'My Listings',
+                onTap: () => context.push(RouteNames.myListings.path),
+             
+              ),
               
               SettingsRow(
-                emoji: '⚙️',
+                icon: Icons.settings_outlined,
                 label: 'Settings',
-                onTap: () => context.push('/settings'), 
+                onTap: () => context.push(RouteNames.settings.path), 
               ),
             ],
           ),

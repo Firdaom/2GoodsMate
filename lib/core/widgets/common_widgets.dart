@@ -430,17 +430,17 @@ class ItemCard extends StatelessWidget {
 
 // ─── Settings Row ─────────────────────────────────────────
 class SettingsRow extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String label;
   final bool danger;
   final VoidCallback? onTap;
 
   const SettingsRow({
     super.key,
-    required this.emoji,
+    required this.icon,
     required this.label,
     this.danger = false,
-    this.onTap,
+    this.onTap, 
   });
 
   @override
@@ -462,7 +462,13 @@ class SettingsRow extends StatelessWidget {
                     : AppTheme.accentLight,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Center(child: Text(emoji, style: const TextStyle(fontSize: 16))),
+              child: Center(
+                child: Icon(
+                  icon, 
+                  size: 18, 
+                  color: danger ? AppTheme.danger : AppTheme.accent,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
