@@ -222,7 +222,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                       backgroundColor: AppTheme.danger,
                     ),
                   );
-                  // กลับไปหน้าก่อนหน้า (น่าจะหน้า Purchase History)
+                  // กลับไปหน้าก่อนหน้า ( Purchase History)
                   Navigator.pop(context);
                 }
               } catch (e) {

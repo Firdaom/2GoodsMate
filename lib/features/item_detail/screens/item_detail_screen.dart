@@ -163,7 +163,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           context.push(RouteNames.order.path, extra: {
                             'items': [item],
                             'isFromCart': false, 
-                          });
+                          }); 
                         },
                       ),
                     ),

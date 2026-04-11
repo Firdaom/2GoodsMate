@@ -27,13 +27,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   UserModel? _user;
-
-  int _toPayCount = 0;
-  int _toShipCount = 0;
-  int _toReceiveCount = 0;
-  int _toRateCount = 0;
-  String? _latestOrderId;
-
   int unreadMessages = 0;
 
   @override
@@ -42,51 +35,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _load();
   }
 
+  // 🔥 ฟังก์ชันดึงแค่ข้อมูล Profile ส่วนตัวเลขสถานะปล่อยให้ StreamBuilder จัดการ
   Future<void> _load() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+    
     final userRepo = UserRepository();
     final user = await userRepo.getUserProfile(uid);
-    try {
-      final orderSnapshot = await FirebaseFirestore.instance
-          .collection('orders')
-          .where('buyerId', isEqualTo: uid)
-          .orderBy('createdAt', descending: true) // เรียงจากใหม่ไปเก่า
-          .get();
-
-      int pay = 0, ship = 0, receive = 0, rate = 0;
-      String? latestId;
-
-      if (orderSnapshot.docs.isNotEmpty) {
-        latestId = orderSnapshot.docs.first.id; // เก็บ ID ออเดอร์ล่าสุดไว้
-
-        // นับจำนวนสถานะต่างๆ
-        for (var doc in orderSnapshot.docs) {
-          final status = doc.data()['status'] as String?;
-          if (status == 'to_pay')
-            pay++;
-          else if (status == 'to_ship')
-            ship++;
-          else if (status == 'to_receive')
-            receive++;
-          else if (status == 'completed')
-            rate++;
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _user = user;
-          _toPayCount = pay;
-          _toShipCount = ship;
-          _toReceiveCount = receive;
-          _toRateCount = rate;
-          _latestOrderId = latestId; // อัปเดต ID ล่าสุด
-        });
-      }
-    } catch (e) {
-      print('Error fetching orders: $e');
-      if (mounted) setState(() => _user = user);
+    
+    if (mounted) {
+      setState(() {
+        _user = user;
+      });
     }
   }
 
@@ -114,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // 🛒 & 💬 กลุ่มไอคอนด้านขวา
                   Row(
                     children: [
-                      const CartIconButton(), // ใช้ตัวที่เราเพิ่งสร้างไว้ใน Common Widgets
+                      const CartIconButton(),
                       const SizedBox(width: 4),
                       IconButton(
                         onPressed: () {
@@ -246,7 +206,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            // 🔥 1. เปลี่ยนให้เด้งไปหน้า Purchase History แท็บ All (index 0)
                             context.push(
                               RouteNames.purchaseHistory.path,
                               extra: 0,
@@ -272,51 +231,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                     const SizedBox(height: 25),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _OrderStatusIcon(
-                          icon: Icons.account_balance_wallet_outlined,
-                          label: 'To Pay',
-                          count: _toPayCount,
-                          // 🔥 2. ส่ง index 1 ไปเปิดแท็บ To Pay
-                          onTap: () => context.push(
-                            RouteNames.purchaseHistory.path,
-                            extra: 1,
-                          ),
-                        ),
-                        _OrderStatusIcon(
-                          icon: Icons.inventory_2_outlined,
-                          label: 'To Ship',
-                          count: _toShipCount,
-                          // 🔥 3. ส่ง index 2 ไปเปิดแท็บ To Ship
-                          onTap: () => context.push(
-                            RouteNames.purchaseHistory.path,
-                            extra: 2,
-                          ),
-                        ),
-                        _OrderStatusIcon(
-                          icon: Icons.local_shipping_outlined,
-                          label: 'To Receive',
-                          count: _toReceiveCount,
-                          // 🔥 4. ส่ง index 3 ไปเปิดแท็บ To Receive
-                          onTap: () => context.push(
-                            RouteNames.purchaseHistory.path,
-                            extra: 3,
-                          ),
-                        ),
-                        _OrderStatusIcon(
-                          icon: Icons.star_border,
-                          label: 'To Rate',
-                          count: _toRateCount,
-                          // 🔥 5. ส่ง index 4 ไปเปิดแท็บ To Rate
-                          onTap: () => context.push(
-                            RouteNames.purchaseHistory.path,
-                            extra: 4,
-                          ),
-                        ),
-                      ],
+                    
+                    // 🔥 พระเอกของเรา StreamBuilder มาอยู่ตรงนี้แล้ว!
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('orders')
+                          .where('buyerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                          .where('status', whereIn: ['to_pay', 'to_ship', 'to_receive', 'completed']) 
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        int pay = 0, ship = 0, receive = 0, rate = 0;
+
+                        if (snapshot.hasData) {
+                          for (var doc in snapshot.data!.docs) {
+                            final status = doc.get('status') as String?;
+                            if (status == 'to_pay') pay++;
+                            else if (status == 'to_ship') ship++;
+                            else if (status == 'to_receive') receive++;
+                            else if (status == 'completed') rate++;
+                          }
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _OrderStatusIcon(
+                              icon: Icons.account_balance_wallet_outlined,
+                              label: 'To Pay',
+                              count: pay,
+                              onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 1),
+                            ),
+                            _OrderStatusIcon(
+                              icon: Icons.inventory_2_outlined,
+                              label: 'To Ship',
+                              count: ship,
+                              onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 2),
+                            ),
+                            _OrderStatusIcon(
+                              icon: Icons.local_shipping_outlined,
+                              label: 'To Receive',
+                              count: receive,
+                              onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 3),
+                            ),
+                            _OrderStatusIcon(
+                              icon: Icons.star_border,
+                              label: 'To Rate',
+                              count: rate,
+                              onTap: () => context.push(RouteNames.purchaseHistory.path, extra: 4),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -330,7 +296,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.person_outline,
                 label: 'Personal Information',
                 onTap: () async {
-                  // 👇 1. เพิ่ม rootNavigator: true ตรงนี้ เพื่อให้ Bottom Bar หายไปตอนแก้โปรไฟล์
                   await Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (_) => EditProfileScreen(user: _user),
@@ -344,22 +309,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label: 'My Listings',
                 onTap: () => context.push(RouteNames.myListings.path),
               ),
-
               SettingsRow(
                 icon: Icons.storefront_outlined, 
                 label: 'Switch Role', 
                 onTap: () {
-                  // TODO: ใส่ Logic สำหรับการสลับ Role ในอนาคต
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        'Switching to Seller Mode... (Coming Soon)',
-                      ),
+                      content: Text('Switching to Seller Mode... (Coming Soon)'),
                     ),
                   );
                 },
               ),
-
               SettingsRow(
                 icon: Icons.settings_outlined,
                 label: 'Settings',
@@ -398,7 +358,6 @@ class _OrderStatusIcon extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Icon(icon, color: AppTheme.textPrimary, size: 28),
-              // ถ้ามีตัวเลข (มากกว่า 0) ถึงจะโชว์วงกลมสีแดง
               if (count > 0)
                 Positioned(
                   right: -6,
@@ -406,22 +365,20 @@ class _OrderStatusIcon extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: AppTheme.danger, // ใช้สีแดงใน Theme ของคุณ
+                      color: AppTheme.danger, 
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: AppTheme.surface,
                         width: 2,
-                      ), // ขอบขาวให้ดูมีมิติ
+                      ), 
                     ),
                     child: Text(
-                      count > 99
-                          ? '99+'
-                          : count.toString(), // ถ้าเกิน 99 ให้โชว์ 99+
+                      count > 99 ? '99+' : count.toString(), 
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
-                        height: 1, // จัดให้อยู่ตรงกลางวงกลม
+                        height: 1, 
                       ),
                     ),
                   ),
