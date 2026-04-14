@@ -1,4 +1,6 @@
 import 'package:anigoods/features/add_item/screens/addItem_screen.dart';
+import 'package:anigoods/features/auth/screens/privacy_screen.dart';
+import 'package:anigoods/features/auth/screens/terms_screen.dart';
 import 'package:anigoods/features/chat/screens/chat_room_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -49,7 +51,9 @@ enum RouteNames {
   orderStatus,
   purchaseHistory,
   chat,
-  cart;
+  cart,
+  terms,
+  privacy;
 
   // Helper getter
   String get path {
@@ -92,6 +96,11 @@ enum RouteNames {
         return '/chat';
       case RouteNames.cart:
         return '/cart';
+      case RouteNames.terms:
+        return '/terms';
+      case RouteNames.privacy:
+        return '/privacy';
+
     }
   }
 }
@@ -111,13 +120,15 @@ final appRouter = GoRouter(
     final isLanding = state.matchedLocation == RouteNames.landing.path;
     final isLoggingIn = state.matchedLocation == RouteNames.login.path;
     final isRegistering = state.matchedLocation == RouteNames.register.path;
-    final isVerifyingEmail =
-        state.matchedLocation == RouteNames.verifyEmail.path;
+    final isVerifyingEmail = state.matchedLocation == RouteNames.verifyEmail.path;
+
+    final isTermsOrPrivacy = state.matchedLocation == RouteNames.terms.path || 
+                             state.matchedLocation == RouteNames.privacy.path;
 
     if (isSplash) return null;
 
     if (!isLoggedIn) {
-      final isAuthPage = isLanding || isLoggingIn || isRegistering || isSplash;
+      final isAuthPage = isLanding || isLoggingIn || isRegistering || isSplash || isTermsOrPrivacy;
       if (!isAuthPage) return RouteNames.login.path;
       return null;
     }
@@ -233,6 +244,17 @@ final appRouter = GoRouter(
       name: RouteNames.cart.name,
       builder: (context, state) => const CartScreen(),
     ),
+    GoRoute(
+      path: RouteNames.terms.path,
+      name: RouteNames.terms.name,
+      builder: (context, state) => const TermsScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.privacy.path,
+      name: RouteNames.privacy.name,
+      builder: (context, state) => const PrivacyScreen(),
+    ),
+
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
     ShellRoute(
