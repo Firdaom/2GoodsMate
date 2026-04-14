@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart';
 
 enum ReportReason {
   fakeItem,
@@ -9,7 +9,9 @@ enum ReportReason {
   scam,
   duplicateListing,
   other;
+}
 
+extension ReportReasonUIExtension on ReportReason {
   String get displayName {
     switch (this) {
       case ReportReason.fakeItem:
@@ -58,22 +60,23 @@ class ReportModel {
   });
 
   factory ReportModel.fromFirestore(DocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>; 
+    
     return ReportModel(
       id: doc.id,
-      itemId: d[ReportFields.itemId] ?? '',
-      itemTitle: d[ReportFields.itemTitle] ?? '',
-      reporterId: d[ReportFields.reporterId] ?? '',
-      reporterName: d[ReportFields.reporterName] ?? '',
+      itemId: data[ReportFields.itemId] ?? '',
+      itemTitle: data[ReportFields.itemTitle] ?? '',
+      reporterId: data[ReportFields.reporterId] ?? '',
+      reporterName: data[ReportFields.reporterName] ?? '',
       reason: ReportReason.values.firstWhere(
-        (e) => e.name == d[ReportFields.reason],
+        (e) => e.name == data[ReportFields.reason],
         orElse: () => ReportReason.other,
       ),
-      additionalInfo: d[ReportFields.additionalInfo],
-      evidenceUrls: List<String>.from(d[ReportFields.evidenceUrls] ?? []),
-      createdAt: (d[ReportFields.createdAt] as Timestamp?)?.toDate() ?? DateTime.now(),
-      reviewed: d[ReportFields.reviewed] ?? false,
-      adminNote: d[ReportFields.adminNote],
+      additionalInfo: data[ReportFields.additionalInfo],
+      evidenceUrls: List<String>.from(data[ReportFields.evidenceUrls] ?? []),
+      createdAt: (data[ReportFields.createdAt] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reviewed: data[ReportFields.reviewed] ?? false,
+      adminNote: data[ReportFields.adminNote],
     );
   }
 

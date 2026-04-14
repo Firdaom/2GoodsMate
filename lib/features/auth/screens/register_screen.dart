@@ -6,7 +6,7 @@ import 'package:anigoods/core/services/error_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/core/services/auth_service.dart';
+import 'package:anigoods/features/auth/services/auth_service.dart';
 
 // ══════════════════════════════════════════════════════════
 // REGISTER SCREEN
@@ -255,7 +255,7 @@ class _Logo extends StatelessWidget {
         boxShadow: [BoxShadow(color: AppTheme.accent.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: ClipOval(
-        child: Image.asset('assets/2goodsMate_logo.png', fit: BoxFit.cover),
+        child: Image.asset('assets/logo.png', fit: BoxFit.cover),
       ),
     ),
     const SizedBox(height: 16),

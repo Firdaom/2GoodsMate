@@ -4,13 +4,24 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:anigoods/models/user_model.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart'; 
 import 'package:anigoods/core/exceptions/app_exception.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Repository handling all user profile operations
+final userRepositoryProvider = Provider((ref) => UserRepository(
+  firestore: FirebaseFirestore.instance,
+  storage: FirebaseStorage.instance,
+));
+
 class UserRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseStorage _storage;
+
+  UserRepository({
+    required FirebaseFirestore firestore,
+    required FirebaseStorage storage,
+  })  : _firestore = firestore,
+        _storage = storage;
 
   /// Get user profile by UID
   Future<UserModel?> getUserProfile(String uid) async {
@@ -26,7 +37,7 @@ class UserRepository {
     } on FirebaseException catch (e) {
       throw AppException(
         message: _getFirestoreUserMessage(e.code),
-        code: e.code,
+        code: e.code, 
         originalError: e,
       );
     }
@@ -72,13 +83,13 @@ class UserRepository {
           .collection(FirebaseCollections.users)
           .doc(uid)
           .set(
-            {
-              UserFields.name: name,
-              UserFields.username: username,
-              if (profileImageUrl != null) UserFields.profileImageUrl: profileImageUrl,
-            },
-            SetOptions(merge: true),
-          );
+        {
+          UserFields.name: name,
+          UserFields.username: username,
+          if (profileImageUrl != null) UserFields.profileImageUrl: profileImageUrl,
+        },
+        SetOptions(merge: true),
+      );
     } on FirebaseException catch (e) {
       throw AppException(
         message: _getFirestoreUserMessage(e.code),
@@ -88,41 +99,22 @@ class UserRepository {
     }
   }
 
-  /// Get user-friendly message for Firestore errors
+  // --- Error Message Helpers ---
+
   String _getFirestoreUserMessage(String code) {
     switch (code) {
-      case 'permission-denied':
-        return 'Permission denied. Please sign in again';
-      case 'not-found':
-        return 'User profile not found';
-      case 'already-exists':
-        return 'This profile already exists';
-      case 'failed-precondition':
-        return 'Cannot update profile at this time';
-      case 'unavailable':
-        return 'Service temporarily unavailable';
-      case 'deadline-exceeded':
-        return 'Request timed out. Please try again';
-      case 'unauthenticated':
-        return 'Please sign in to continue';
-      default:
-        return 'Failed to update profile. Please try again';
+      case 'permission-denied': return 'Permission denied. Please sign in again';
+      case 'not-found': return 'User profile not found';
+      case 'unauthenticated': return 'Please sign in to continue';
+      default: return 'Failed to update profile. Please try again';
     }
   }
 
-  /// Get user-friendly message for Storage errors
   String _getStorageUserMessage(String code) {
     switch (code) {
-      case 'permission-denied':
-        return 'Permission denied. Please sign in again';
-      case 'not-found':
-        return 'File not found';
-      case 'object-not-empty':
-        return 'Please select a valid image';
-      case 'bucket-not-found':
-        return 'Storage unavailable';
-      default:
-        return 'Failed to upload image. Please try again';
+      case 'permission-denied': return 'Access denied. Check your permissions';
+      case 'quota-exceeded': return 'Storage full. Please contact support';
+      default: return 'Failed to upload image. Please try again';
     }
   }
 }

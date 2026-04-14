@@ -8,22 +8,16 @@ import 'package:anigoods/models/user_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/error_handler.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/features/profile/screens/profile_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 
-
-
-
-// ════════════════════════════════════════════════════════
-// EDIT PROFILE
-// ════════════════════════════════════════════════════════
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget { 
   final UserModel? user;
   const EditProfileScreen({super.key, this.user});
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> { 
   final _nameCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
   XFile? _pickedImage;
@@ -49,9 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-    );
+    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() => _pickedImage = image);
     }
@@ -67,21 +59,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       String? imageUrl = _existingImageUrl;
-      final userRepo = UserRepository();
 
-      // Upload image if selected
+      final userRepo = ref.read(userRepositoryProvider);
+
       if (_pickedImage != null) {
         try {
-          imageUrl = await userRepo.uploadProfileImage(
-            uid: uid,
-            image: _pickedImage!,
-          );
+          imageUrl = await userRepo.uploadProfileImage(uid: uid, image: _pickedImage!);
         } catch (e) {
-          ErrorHandler.showError(context, e, contextLabel: 'profile_screen._saveProfile() - Image upload');
+          ErrorHandler.showError(context, e, contextLabel: 'Edit Image Upload');
         }
       }
 
-      // Save user profile data
       await userRepo.updateUserProfile(
         uid: uid,
         name: _nameCtrl.text.trim(),
@@ -91,10 +79,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (mounted) {
         ErrorHandler.showSuccess(context, 'Profile updated successfully!');
-        Navigator.pop(context);
+        Navigator.pop(context, true); 
       }
     } catch (e) {
-      ErrorHandler.showError(context, e, contextLabel: 'profile_screen._saveProfile()');
+      ErrorHandler.showError(context, e, contextLabel: 'Edit Profile Save');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -105,10 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
@@ -121,139 +106,58 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Stack(
                     children: [
                       Container(
-                        width: 120,
-                        height: 120,
+                        width: 120, height: 120,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.accent, AppTheme.accentDark],
-                          ),
+                          gradient: const LinearGradient(colors: [AppTheme.accent, AppTheme.accentDark]),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppTheme.accent.withOpacity(0.3),
-                            width: 3,
-                          ),
+                          border: Border.all(color: AppTheme.accent.withOpacity(0.3), width: 3),
                         ),
                         child: _pickedImage != null
-                            ? ClipOval(
-                                child: kIsWeb
-                                    ? Image.network(
-                                        _pickedImage!.path,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Image.file(
-                                        File(_pickedImage!.path),
-                                        fit: BoxFit.cover,
-                                      ),
-                              )
+                            ? ClipOval(child: kIsWeb ? Image.network(_pickedImage!.path, fit: BoxFit.cover) : Image.file(File(_pickedImage!.path), fit: BoxFit.cover))
                             : _existingImageUrl != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  _existingImageUrl!,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : const Center(
-                                child: Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: AppTheme.textMuted,
-                                ),
-                              ),
+                                ? ClipOval(child: Image.network(_existingImageUrl!, fit: BoxFit.cover))
+                                : const Center(child: Icon(Icons.person, size: 50, color: AppTheme.textMuted)),
                       ),
                       Positioned(
-                        bottom: 0,
-                        right: 0,
+                        bottom: 0, right: 0,
                         child: GestureDetector(
                           onTap: _pickImage,
                           child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppTheme.accent,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(color: AppTheme.accent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                           ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Tap camera to add photo',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
+                  const Text('Tap camera to add photo', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
             const SizedBox(height: 28),
             _label('Display Name'),
             const SizedBox(height: 6),
-            TextField(
-              controller: _nameCtrl,
-              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-              decoration: const InputDecoration(hintText: 'Your name'),
-            ),
+            TextField(controller: _nameCtrl, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13), decoration: const InputDecoration(hintText: 'Your name')),
             const SizedBox(height: 16),
             _label('Username'),
             const SizedBox(height: 6),
-            TextField(
-              controller: _usernameCtrl,
-              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-              decoration: const InputDecoration(
-                prefixText: '@',
-                prefixStyle: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 13,
-                ),
-                hintText: 'username',
-              ),
-            ),
+            TextField(controller: _usernameCtrl, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13), decoration: const InputDecoration(prefixText: '@', hintText: 'username')),
             const SizedBox(height: 28),
             GestureDetector(
               onTap: _loading ? null : _save,
               child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.accent, AppTheme.accentDark],
-                  ),
+                  gradient: const LinearGradient(colors: [AppTheme.accent, AppTheme.accentDark]),
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.accent.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: AppTheme.accent.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 4))],
                 ),
                 child: Center(
                   child: _loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Save Changes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
                 ),
               ),
             ),
@@ -263,13 +167,5 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _label(String text) => Text(
-    text.toUpperCase(),
-    style: const TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w600,
-      color: AppTheme.textMuted,
-      letterSpacing: 0.6,
-    ),
-  );
+  Widget _label(String text) => Text(text.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textMuted, letterSpacing: 0.6));
 }

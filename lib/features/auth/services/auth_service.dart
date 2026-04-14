@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:anigoods/core/exceptions/app_exception.dart';
+import 'package:anigoods/models/user_model.dart'; 
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // ─── Register with Email & Password ─────────────────
   Future<User> registerWithEmail({
     required String email,
     required String password,
@@ -18,9 +18,7 @@ class AuthService {
         password: password,
       );
 
-      // Create user profile
       await _createUserProfile(credential.user!);
-
       return credential.user!;
     } on FirebaseAuthException catch (e) {
       throw AppException(
@@ -42,7 +40,6 @@ class AuthService {
         password: password,
       );
 
-      // Check if user profile exists, if not create it
       final userDoc = await _firestore
           .collection(FirebaseCollections.users)
           .doc(credential.user!.uid)
@@ -67,15 +64,25 @@ class AuthService {
     final email = user.email ?? '';
     final username = email.split('@')[0];
 
-    await _firestore.collection(FirebaseCollections.users).doc(user.uid).set({
-      UserFields.email: email,
-      UserFields.name: username,
-      UserFields.username: username,
-      UserFields.avatar: '🎨',
-      UserFields.watchlist: [],
-      UserFields.notificationKeywords: [],
-      UserFields.createdAt: FieldValue.serverTimestamp(),
-    });
+    // สร้าง Object จาก UserModel ไปเลย! 
+    final newUser = UserModel(
+      uid: user.uid,
+      name: username,
+      username: username,
+      email: email,
+      profileImageUrl: null, 
+      cart: [],
+      watchlist: [],
+      notificationKeywords: [],
+      isVerified: false, 
+      createdAt: DateTime.now(), 
+    );
+
+    // สั่งเซฟด้วย 
+    await _firestore
+        .collection(FirebaseCollections.users)
+        .doc(user.uid)
+        .set(newUser.toFirestore());
   }
 
   // ─── Sign Out ───────────────────────────────────────
@@ -92,25 +99,25 @@ class AuthService {
   // ─── Convert Firebase Auth errors to user-friendly messages ───
   String _getAuthMessage(String code) {
     switch (code) {
-      case 'user-not-found':
-      case 'wrong-password':
-      case 'invalid-credential':
-      case 'invalid-email':
+      case AuthErrorCodes.userNotFound:
+      case AuthErrorCodes.wrongPassword:
+      case AuthErrorCodes.invalidCredential:
+      case AuthErrorCodes.invalidEmail:
         return 'Invalid email or password';
-      case 'user-disabled':
-        return 'This account has been disabled';
-      case 'too-many-requests':
-        return 'Too many login attempts. Please try again later';
-      case 'weak-password':
-        return 'Password is too weak';
-      case 'email-already-in-use':
+      case AuthErrorCodes.emailAlreadyInUse:
         return 'Email is already in use';
-      case 'operation-not-allowed':
+      case AuthErrorCodes.weakPassword:
+        return 'Password is too weak';
+      case AuthErrorCodes.tooManyRequests:
+        return 'Too many login attempts. Please try again later';
+      case AuthErrorCodes.userDisabled: 
+        return 'This account has been disabled';
+      case AuthErrorCodes.operationNotAllowed:
         return 'Email/password registration is disabled';
-      case 'network-request-failed':
+      case AuthErrorCodes.networkRequestFailed:
         return 'Network error. Please check your connection';
       default:
-        return 'Authentication failed';
+        return 'Authentication failed ($code)'; // แนะนำให้ต่อ $code ท้ายข้อความ จะได้รู้เวลา Debug
     }
   }
 }

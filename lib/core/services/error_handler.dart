@@ -1,87 +1,92 @@
+import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:anigoods/core/theme/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:anigoods/core/exceptions/app_exception.dart';
-
-/// ════════════════════════════════════════════════════════
-/// ERROR HANDLER SERVICE
-/// ────────────────────────────────────────────────────────
-/// ✅ User-friendly messages for UI
-/// ✅ Detailed logging for developers
-/// ✅ Consistent error handling across all screens
-/// ════════════════════════════════════════════════════════
+import 'package:anigoods/core/constants/firebase_constants.dart';
 
 class ErrorHandler {
   /// Get user-friendly error message from exception
   static String getUserMessage(dynamic error) {
-    // App Exception (custom errors from repositories)
-    if (error is AppException) {
-      return error.message;
-    }
+    // 1. Custom App Exceptions
+    if (error is AppException) return error.message;
 
-    // Firebase Auth Errors
+    // 2. Firebase Auth Errors
     if (error is FirebaseAuthException) {
       switch (error.code) {
-        case 'user-not-found':
-        case 'wrong-password':
-        case 'invalid-credential':
-        case 'invalid-email':
+        case AuthErrorCodes.userNotFound:
+        case AuthErrorCodes.wrongPassword:
+        case AuthErrorCodes.invalidCredential:
+        case AuthErrorCodes.invalidEmail:
           return 'Invalid email or password';
-        case 'user-disabled':
+        case AuthErrorCodes.userDisabled:
           return 'This account has been disabled';
-        case 'too-many-requests':
+        case AuthErrorCodes.tooManyRequests:
           return 'Too many login attempts. Please try again later';
-        case 'weak-password':
+        case AuthErrorCodes.weakPassword:
           return 'Password is too weak';
-        case 'email-already-in-use':
+        case AuthErrorCodes.emailAlreadyInUse:
           return 'Email is already in use';
-        case 'operation-not-allowed':
+        case AuthErrorCodes.operationNotAllowed:
           return 'Email/password registration is disabled';
-        case 'network-request-failed':
+        case AuthErrorCodes.networkRequestFailed:
           return 'Network error. Please check your connection';
         default:
           return 'Authentication failed';
       }
     }
 
-    // Firebase/Firestore Errors
+    // 3. Firebase Core / Firestore / Storage Errors
     if (error is FirebaseException) {
       switch (error.code) {
-        case 'permission-denied':
+        // ─── Firestore Errors ───────────────────────────
+        case FirestoreErrorCodes.permissionDenied:
           return 'Permission denied. Please sign in again';
-        case 'not-found':
+        case FirestoreErrorCodes.notFound:
           return 'Item not found';
-        case 'already-exists':
+        case FirestoreErrorCodes.alreadyExists:
           return 'This item already exists';
-        case 'failed-precondition':
+        case FirestoreErrorCodes.failedPrecondition:
           return 'Cannot perform this action at this time';
-        case 'aborted':
+        case FirestoreErrorCodes.aborted:
           return 'Operation was cancelled';
-        case 'unavailable':
+        case FirestoreErrorCodes.unavailable:
           return 'Service temporarily unavailable';
-        case 'deadline-exceeded':
+        case FirestoreErrorCodes.deadlineExceeded:
           return 'Request timed out. Please try again';
-        case 'unauthenticated':
+        case FirestoreErrorCodes.unauthenticated:
           return 'Please sign in to continue';
+          
+        // ─── Storage Errors ─────────────────────────────
+        case StorageErrorCodes.unauthorized:
+          return 'You do not have permission to upload images';
+        case StorageErrorCodes.canceled:
+          return 'Upload was cancelled';
+        case StorageErrorCodes.objectNotFound:
+          return 'File not found';
+        case StorageErrorCodes.quotaExceeded:
+          return 'Storage quota exceeded';
+        case StorageErrorCodes.unauthenticated: // บางที storage จะใช้ตัวนี้
+          return 'Please sign in to upload images';
+        case StorageErrorCodes.retryLimitExceeded:
+          return 'Upload timeout. Please try again';
+
         default:
           return 'Something went wrong. Please try again';
       }
     }
 
-    // Generic errors
+    // 4. Generic errors (เช่น ส่ง String เข้ามาตรงๆ)
     if (error is String) {
       return error.isEmpty ? 'An error occurred' : error;
     }
 
+    // 5. Fallback
     return 'An unexpected error occurred';
   }
 
   /// Log detailed error information for developers
-  static void logError(
-    String context,
-    dynamic error, {
-    StackTrace? stackTrace,
-  }) {
+  static void logError(String context, dynamic error, {StackTrace? stackTrace}) {
     debugPrint('┌─────────────────────────────────────────');
     debugPrint('│ ERROR in $context');
     debugPrint('├─────────────────────────────────────────');
@@ -98,7 +103,7 @@ class ErrorHandler {
       debugPrint('│ Code: ${error.code}');
       debugPrint('│ Message: ${error.message}');
     } else if (error is FirebaseException) {
-      debugPrint('│ Type: Firebase Exception');
+      debugPrint('│ Type: Firebase Exception (Firestore/Storage)');
       debugPrint('│ Code: ${error.code}');
       debugPrint('│ Message: ${error.message}');
     } else {
@@ -113,56 +118,30 @@ class ErrorHandler {
     debugPrint('└─────────────────────────────────────────');
   }
 
-  /// Show error via ScaffoldMessenger
-  static void showError(
-    BuildContext context,
-    dynamic error, {
-    String? contextLabel,
-    Duration duration = const Duration(seconds: 4),
-  }) {
-    logError(contextLabel ?? 'Unknown', error);
-
-    final userMessage = getUserMessage(error);
+static void showError(BuildContext context, dynamic error, {String? contextLabel}) {
+    final String message = getUserMessage(error); 
+    
+    logError(contextLabel ?? 'UI Error', error);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(userMessage),
-        backgroundColor: AppTheme.danger,
-        duration: duration,
+        content: Text(message, style: const TextStyle(color: Colors.white, fontSize: 13)),
+        backgroundColor: AppTheme.danger, 
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
-  /// Show info/warning message
-  static void showInfo(
-    BuildContext context,
-    String message, {
-    Duration duration = const Duration(seconds: 3),
-    Color? backgroundColor,
-  }) {
+  static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor ?? AppTheme.accentDark,
-        duration: duration,
+        content: Text(message, style: const TextStyle(color: Colors.white, fontSize: 13)),
+        backgroundColor: AppTheme.success, 
         behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  /// Show success message
-  static void showSuccess(
-    BuildContext context,
-    String message, {
-    Duration duration = const Duration(seconds: 3),
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.success,
-        duration: duration,
-        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

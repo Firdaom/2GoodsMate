@@ -1,239 +1,191 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:anigoods/models/item_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
-import 'package:anigoods/features/add_item/screens/addItem_screen.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
-import 'package:anigoods/core/widgets/common_widgets.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart';
+import 'package:anigoods/features/auth/providers/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-
-// ════════════════════════════════════════════════════════
-// notification_keywords_screen.dart
-// ════════════════════════════════════════════════
-
-class NotificationKeywordsScreen extends StatefulWidget {
+class NotificationKeywordsScreen extends ConsumerStatefulWidget {
   const NotificationKeywordsScreen({super.key});
   @override
-  State<NotificationKeywordsScreen> createState() =>
-      _NotificationKeywordsScreenState();
+  ConsumerState<NotificationKeywordsScreen> createState() => _NotificationKeywordsScreenState();
 }
 
-class _NotificationKeywordsScreenState
-    extends State<NotificationKeywordsScreen> {
+class _NotificationKeywordsScreenState extends ConsumerState<NotificationKeywordsScreen> {
   final _ctrl = TextEditingController();
   List<String> _keywords = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadKeywords();
   }
 
-  Future<void> _load() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final doc = await FirebaseFirestore.instance
-        .collection(FirebaseCollections.users)
-        .doc(uid)
-        .get();
-    if (doc.exists && mounted)
-      setState(
-        () => _keywords = List<String>.from(
-          doc[UserFields.notificationKeywords] ?? [],
-        ),
-      );
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
   }
 
-  Future<void> _add() async {
+  String? get _userId => ref.read(firebaseAuthProvider).currentUser?.uid;
+
+  Future<void> _loadKeywords() async {
+    if (_userId == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection(FirebaseCollections.users)
+          .doc(_userId)
+          .get();
+      
+      if (doc.exists && mounted) {
+        setState(() {
+          _keywords = List<String>.from(doc.data()?[UserFields.notificationKeywords] ?? []);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _addKeyword() async {
     final kw = _ctrl.text.trim();
-    if (kw.isEmpty) return;
+    if (kw.isEmpty || _userId == null) return;
+    if (_keywords.contains(kw)) return; // กันคำซ้ำ
 
-    // อัปเดตหน้าจอให้ผู้ใช้เห็นทันที (Optimistic UI)
-    setState(() => _keywords.add(kw));
+    setState(() => _keywords.add(kw)); // Optimistic UI
     _ctrl.clear();
 
-    //สั่ง Firebase ให้เพิ่มคำนี้เข้าไปใน Array หลังบ้าน
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      await FirebaseFirestore.instance
-          .collection(FirebaseCollections.users)
-          .doc(uid)
-          .update({
-        UserFields.notificationKeywords: FieldValue.arrayUnion([kw]),
-      });
-    }
+    await FirebaseFirestore.instance.collection(FirebaseCollections.users).doc(_userId).update({
+      UserFields.notificationKeywords: FieldValue.arrayUnion([kw]),
+    });
   }
 
-  Future<void> _remove(int i) async {
-    final kwToRemove = _keywords[i]; // จำคำที่จะลบไว้ก่อน
+  Future<void> _removeKeyword(int index) async {
+    if (_userId == null) return;
+    final kwToRemove = _keywords[index];
 
-    // 1. ลบออกจากหน้าจอผู้ใช้ทันที
-    setState(() => _keywords.removeAt(i));
+    setState(() => _keywords.removeAt(index)); // UI เปลี่ยนทันที
 
-    // 2. สั่ง Firebase ให้เตะคำนี้ออกจาก Array หลังบ้าน
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      await FirebaseFirestore.instance
-          .collection(FirebaseCollections.users)
-          .doc(uid)
-          .update({
-        UserFields.notificationKeywords: FieldValue.arrayRemove([kwToRemove]),
-      });
-    }
+    await FirebaseFirestore.instance.collection(FirebaseCollections.users).doc(_userId).update({
+      UserFields.notificationKeywords: FieldValue.arrayRemove([kwToRemove]),
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Keyword Alerts'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Keyword Alerts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.accentLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '💡 How it works',
-                    style: TextStyle(
-                      color: AppTheme.accent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Add keywords and get notified when new matching items are listed!',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const SectionLabel('ADD NEW KEYWORD'),
-            const SizedBox(height: 8),
-            Row(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _ctrl,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'e.g., Haikyu, Naruto...',
-                    ),
-                    onSubmitted: (_) => _add(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _add,
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppTheme.accent, AppTheme.accentDark],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white),
-                  ),
-                ),
+                _buildHowItWorks(),
+                const SizedBox(height: 24),
+                const SectionLabel('ADD NEW KEYWORD'),
+                const SizedBox(height: 8),
+                _buildInputRow(),
+                const SizedBox(height: 24),
+                SectionLabel('YOUR KEYWORDS (${_keywords.length})'),
+                const SizedBox(height: 12),
+                Expanded(child: _buildKeywordList()),
               ],
             ),
-            const SizedBox(height: 20),
-            SectionLabel('YOUR KEYWORDS (${_keywords.length})'),
-            const SizedBox(height: 8),
-            Expanded(
-              child: _keywords.isEmpty
-                  ? const EmptyState(
-                     icon: Icons.search_sharp,
-                      title: 'No keywords yet',
-                      subtitle: 'Add keywords to start tracking',
-                    )
-                  : ListView.separated(
-                      itemCount: _keywords.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.notifications, size: 16),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _keywords[i],
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.textPrimary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _remove(i),
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.danger.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppTheme.danger.withOpacity(0.2),
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    '×',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.danger,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
+
+  Widget _buildHowItWorks() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppTheme.accentLight,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppTheme.accent.withOpacity(0.1)),
+    ),
+    child: Row(
+      children: [
+        const Text('💡', style: TextStyle(fontSize: 20)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Add keywords and get notified when new matching items are listed!',
+            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.4),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildInputRow() => Row(
+    children: [
+      Expanded(
+        child: TextField(
+          controller: _ctrl,
+          decoration: const InputDecoration(hintText: 'e.g., Haikyu, Naruto...'),
+          onSubmitted: (_) => _addKeyword(),
+        ),
+      ),
+      const SizedBox(width: 10),
+      GestureDetector(
+        onTap: _addKeyword,
+        child: Container(
+          width: 50, height: 50,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [AppTheme.accent, AppTheme.accentDark]),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildKeywordList() {
+    if (_keywords.isEmpty) {
+      return const EmptyState(
+        icon: Icons.notifications_none_rounded,
+        title: 'No keywords yet',
+        subtitle: 'Add keywords to start tracking',
+      );
+    }
+    return ListView.separated(
+      itemCount: _keywords.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, i) => _buildKeywordTile(i),
+    );
+  }
+
+  Widget _buildKeywordTile(int index) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppTheme.surface,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppTheme.border),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.notifications_rounded, size: 16, color: AppTheme.accent),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            _keywords[index],
+            style: const TextStyle(fontWeight: FontWeight.w500, color: AppTheme.textPrimary),
+          ),
+        ),
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
+          onPressed: () => _removeKeyword(index),
+        ),
+      ],
+    ),
+  );
 }

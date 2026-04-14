@@ -1,3 +1,5 @@
+import 'package:anigoods/core/router/app_router.dart';
+import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,9 +36,9 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         final isLoggedIn = FirebaseAuth.instance.currentUser != null;
         if (isLoggedIn) {
-          context.go('/home');
+          context.go(RouteNames.home.path);
         } else {
-          context.go('/landing');
+          context.go(RouteNames.landing.path);
         }
       }
     });
@@ -51,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A), // Navy blue background
+      backgroundColor:  AppTheme.surface, // Navy blue background
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -60,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               // Logo
               Image.asset(
-                'assets/logo_no_bg.png',
+                'assets/splash.png',
                 width: 200,
                 height: 200,
                 fit: BoxFit.contain,

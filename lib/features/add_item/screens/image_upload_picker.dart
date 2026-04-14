@@ -18,21 +18,27 @@ class ImageUploadPicker extends StatelessWidget {
   });
 
   // ฟังก์ชันพรีวิวรูปภาพ
-  Widget _buildImagePreview(XFile imageFile) {
-    if (kIsWeb) {
-      return FutureBuilder<Uint8List>(
-        future: imageFile.readAsBytes(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Image.memory(snapshot.data!, fit: BoxFit.contain, width: double.infinity);
-          }
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        },
-      );
-    } else {
-      return Image.file(File(imageFile.path), fit: BoxFit.contain, width: double.infinity);
-    }
+Widget _buildImagePreview(XFile imageFile) {
+  if (kIsWeb) {
+    return FutureBuilder<Uint8List>(
+      future: imageFile.readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(snapshot.data!, fit: BoxFit.contain, width: double.infinity);
+        }
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      },
+    );
+  } else {
+    // เพิ่ม errorBuilder เพื่อกันแอปพังถ้าไฟล์มีปัญหา
+    return Image.file(
+      File(imageFile.path), 
+      fit: BoxFit.contain, 
+      width: double.infinity,
+      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: AppTheme.danger),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

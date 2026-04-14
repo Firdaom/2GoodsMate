@@ -1,9 +1,11 @@
 import 'package:anigoods/core/router/app_router.dart';
-import 'package:anigoods/core/services/cart_service.dart';
+import 'package:anigoods/features/cart/services/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'package:anigoods/features/cart/providers/cart_provider.dart'; 
 
 // ─── Image Carousel ───────────────────────────────────────
 class ImageCarousel extends StatefulWidget {
@@ -313,139 +315,6 @@ class ConditionWithRarity extends StatelessWidget {
   }
 }
 
-// ─── Item Card ────────────────────────────────────────────
-class ItemCard extends StatelessWidget {
-  final ItemModel item;
-  final bool isWatchlisted;
-  final VoidCallback onTap;
-  final VoidCallback onWatchlistToggle;
-
-  const ItemCard({
-    super.key,
-    required this.item,
-    required this.isWatchlisted,
-    required this.onTap,
-    required this.onWatchlistToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ItemImage(imageUrls: item.imageUrls),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${item.series} • ${item.category}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Seller: ${item.sellerName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ),
-                      if (item.sellerVerified) ...[
-                        const SizedBox(width: 4),
-                        const VerifiedBadge(size: 12),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '฿${_formatPrice(item.price)}',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.accent,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          ConditionWithRarity(
-                            condition: item.condition,
-                            rarity: item.rarity,
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: onWatchlistToggle,
-                        child: Icon(
-                          isWatchlisted
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: isWatchlisted
-                              ? AppTheme.heart
-                              : AppTheme.textMuted,
-                          size: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatPrice(double price) => price
-      .toStringAsFixed(0)
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-}
-
 // ─── Settings Row ─────────────────────────────────────────
 class SettingsRow extends StatelessWidget {
   final IconData icon;
@@ -561,61 +430,6 @@ class CategoryChip extends StatelessWidget {
   }
 }
 
-// ─── Contact Button ───────────────────────────────────────
-class ContactButton extends StatelessWidget {
-  final ContactLink link;
-  final VoidCallback onTap;
-
-  const ContactButton({super.key, required this.link, required this.onTap});
-
-  static const _platforms = {
-    'facebook': {'emoji': '📘', 'name': 'Facebook'},
-    'twitter': {'emoji': '🐦', 'name': 'X (Twitter)'},
-    'instagram': {'emoji': '📸', 'name': 'Instagram'},
-    'line': {'emoji': '💬', 'name': 'LINE'},
-    'shopee': {'emoji': '🛒', 'name': 'Shopee'},
-    'lazada': {'emoji': '🛍️', 'name': 'Lazada'},
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final platformInfo =
-        _platforms[link.platform] ?? {'emoji': '🔗', 'name': link.platform};
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(platformInfo['emoji']!, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 8),
-            Text(
-              platformInfo['name']!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────shared buttons──────────────────────────────────────────────
 class PrimaryButton extends StatelessWidget {
@@ -780,57 +594,54 @@ class FullScreenImageViewer extends StatelessWidget {
   }
 }
 
-// ─── Cart Icon Button (With Badge) ────────────────────────
-class CartIconButton extends StatelessWidget {
+
+// ─── Cart Icon Button (ฉบับแก้ตัวแดงและเชื่อม Riverpod) ────────────────
+class CartIconButton extends ConsumerWidget { // ✅ เปลี่ยนจาก StatelessWidget เป็น ConsumerWidget
   const CartIconButton({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: () => context.push('/cart'),
-      // ใช้ ListenableBuilder ครอบไว้ ดักฟัง CartService แบบ Real-time
-      icon: ListenableBuilder(
-        listenable: CartService(),
-        builder: (context, child) {
-          final cartCount = CartService().items.length;
+  Widget build(BuildContext context, WidgetRef ref) { // ✅ เพิ่ม WidgetRef ref
+    // 🎧 ดักฟังจำนวนสินค้าในตะกร้าผ่าน Provider โดยตรง (แม่นยำและลื่นไหลกว่า)
+    final cartItems = ref.watch(cartProvider);
+    final cartCount = cartItems.length;
 
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const Icon(
-                Icons.shopping_cart_outlined,
-                color: AppTheme.textPrimary,
-                size: 24,
-              ),
-              if (cartCount > 0)
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.danger,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 14,
-                      minHeight: 14,
-                    ),
-                    child: Text(
-                      cartCount > 99 ? '99+' : '$cartCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+    return IconButton(
+      onPressed: () => context.push(RouteNames.cart.path), // ✅ ใช้ RouteNames ที่เราตั้งไว้
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(
+            Icons.shopping_cart_outlined,
+            color: AppTheme.textPrimary,
+            size: 24,
+          ),
+          if (cartCount > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: AppTheme.danger,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
                 ),
-            ],
-          );
-        },
+                constraints: const BoxConstraints(
+                  minWidth: 14,
+                  minHeight: 14,
+                ),
+                child: Text(
+                  cartCount > 99 ? '99+' : '$cartCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

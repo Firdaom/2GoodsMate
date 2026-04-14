@@ -1,24 +1,21 @@
-import 'package:anigoods/core/services/cart_service.dart';
-import 'package:anigoods/features/auth/repositories/auth_repository.dart';
+import 'package:anigoods/core/router/app_router.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/error_handler.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
-import 'package:anigoods/core/services/auth_service.dart';
-import 'package:anigoods/core/providers/repositories_provider.dart';
+import 'package:anigoods/features/auth/services/auth_service.dart';
+import 'package:anigoods/features/auth/providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
@@ -46,16 +43,18 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
-      // 1. เรียกคำสั่งเข้าสู่ระบบของเดิม
-      await _authService.signInWithEmail(
+      // ✅ 1. เรียกใช้ผ่าน RepositoryProvider ที่เราแยก Feature ไว้แล้ว
+      final authRepo = ref.read(authRepositoryProvider);
+      
+      await authRepo.signInWithEmail(
+        
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
 
+      // ✅ 2. ตัวอย่างการดึงข้อมูลตะกร้า (ควรเรียกผ่าน provider)
+      // await ref.read(cartProvider.notifier).loadCart();
 
-      await CartService().loadCart();
-
-      // 3. วาร์ปไปหน้า Home
       if (mounted) {
         context.goNamed('home');
       }
@@ -67,25 +66,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _navigateToRegister() {
-    context.goNamed('register');
-  }
-
   Future<void> _forgotPassword() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
-      ErrorHandler.showInfo(context, 'Please enter your email address in the field above');
+      ErrorHandler.logError('login', 'Email empty for password reset');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email address first'))
+      );
       return;
     }
 
     try {
-      final authRepo = AuthRepository();
+      final authRepo = ref.read(authRepositoryProvider);
       await authRepo.sendPasswordResetEmail(email);
+      
       if (mounted) {
-        ErrorHandler.showSuccess(context, 'Password reset email sent! Check your inbox.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent! Check your inbox.'))
+        );
       }
     } catch (e) {
-      ErrorHandler.showError(context, e, contextLabel: 'login_screen._forgotPassword()');
+      ErrorHandler.logError('forgot_password', e);
+      // แสดง Error สวยๆ ผ่าน ErrorHandler
+      final msg = ErrorHandler.getUserMessage(e);
+      setState(() => _error = msg);
     }
   }
 
@@ -117,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/2goodsMate_logo.png',
+                      'assets/logo.png',
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -250,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Create Account
                 GestureDetector(
-                  onTap: _navigateToRegister,
+                  onTap: () => context.goNamed(RouteNames.register.name),
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 12),

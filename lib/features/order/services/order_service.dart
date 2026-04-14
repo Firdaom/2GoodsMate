@@ -1,21 +1,38 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:anigoods/models/order_model.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart';
+import 'package:anigoods/core/exceptions/app_exception.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final orderServiceProvider = Provider(
+  (ref) => OrderService(firestore: FirebaseFirestore.instance),
+);
 
 class OrderService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
-  // 🚀 ฟังก์ชันบันทึกออเดอร์ใหม่ลง Firebase
-  Future<String?> createOrder(OrderModel order) async {
+  OrderService({required FirebaseFirestore firestore}) : _firestore = firestore;
+
+  Future<String> createOrder(OrderModel order) async {
     try {
-      // 1. ส่งข้อมูลไปที่ collection 'orders'
-      // .add() จะสร้าง Document ID ให้เราอัตโนมัติ
-      DocumentReference docRef = await _firestore.collection('orders').add(order.toMap());
-      
-      // 2. ส่ง ID ที่ได้กลับไป เพื่อเอาไปใช้เปิดหน้า Order Status ต่อ
+      DocumentReference docRef = await _firestore
+          .collection(FirebaseCollections.orders)
+          .add(order.toFirestore());
+
+      // 2. คืนค่า ID กลับไป
       return docRef.id;
+    } on FirebaseException catch (e) {
+      // 3. จัดการ Error แบบมือโปร
+      throw AppException(
+        message: e.message ?? 'Failed to place order. Please try again.',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('🔥 Error creating order: $e');
-      return null;
+      throw AppException(
+        message: 'Something went wrong while creating order',
+        code: 'unknown', 
+      );
     }
   }
 }

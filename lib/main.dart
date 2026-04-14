@@ -4,11 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
-import 'package:anigoods/core/services/cart_service.dart';
+import 'package:anigoods/features/cart/providers/cart_provider.dart';
 import 'firebase_options.dart';
 
-
-// Firebase initialization — run before app startup
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -16,13 +14,8 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      CartService().loadCart(); 
-    }
   } catch (e) {
-    debugPrint('Firebase init error: $e');
+    debugPrint('🔥 Firebase init error: $e');
   }
 
   runApp(
@@ -32,8 +25,29 @@ void main() async {
   );
 }
 
-class AniGoodsApp extends StatelessWidget {
+class AniGoodsApp extends ConsumerStatefulWidget { 
   const AniGoodsApp({super.key});
+
+  @override
+  ConsumerState<AniGoodsApp> createState() => _AniGoodsAppState();
+}
+
+class _AniGoodsAppState extends ConsumerState<AniGoodsApp> {
+  @override
+  void initState() {
+    super.initState();
+    // 🛒 โหลดตะกร้าสินค้าทันทีที่แอปเริ่มทำงาน (ถ้า Login อยู่แล้ว)
+    _initializeCart();
+  }
+
+  void _initializeCart() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      Future.microtask(() => 
+        ref.read(cartProvider.notifier).loadCart()
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,11 +60,6 @@ class AniGoodsApp extends StatelessWidget {
         ),
       ),
       routerConfig: appRouter,
-      builder: (context, child) {
-        return ScaffoldMessenger(
-          child: child!,
-        );
-      },
     );
   }
 }

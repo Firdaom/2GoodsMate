@@ -1,10 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Repository handling profile-specific operations
+
+final profileRepositoryProvider = Provider((ref) => ProfileRepository(
+  firestore: FirebaseFirestore.instance,
+));
+
 class ProfileRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+
+  ProfileRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
 
   /// Update user notification keywords
   Future<void> updateNotificationKeywords({
@@ -20,7 +27,7 @@ class ProfileRepository {
             SetOptions(merge: true),
           );
     } catch (e) {
-      debugPrint('Error updating notification keywords: $e');
+      debugPrint('🔥 Error updating notification keywords: $e');
       rethrow;
     }
   }
@@ -32,12 +39,17 @@ class ProfileRepository {
           .collection(FirebaseCollections.users)
           .doc(uid)
           .get();
+      
       if (doc.exists) {
-        return List<String>.from(doc[UserFields.notificationKeywords] ?? []);
+        // ✅ ใช้ Safe Casting เพื่อกันแอปพังถ้าข้อมูลใน Firebase ไม่ใช่ List
+        final data = doc.data();
+        if (data != null && data.containsKey(UserFields.notificationKeywords)) {
+          return List<String>.from(data[UserFields.notificationKeywords] ?? []);
+        }
       }
       return [];
     } catch (e) {
-      debugPrint('Error fetching notification keywords: $e');
+      debugPrint('🔥 Error fetching notification keywords: $e');
       rethrow;
     }
   }

@@ -40,7 +40,7 @@ enum RouteNames {
   watchlist,
   profile,
   itemDetail,
-  editProfile, 
+  editProfile,
   notifications,
   addItem,
   settings,
@@ -71,11 +71,11 @@ enum RouteNames {
       case RouteNames.profile:
         return '/profile';
       case RouteNames.itemDetail:
-        return '/item-detail'; 
+        return '/item-detail/:itemId';
       case RouteNames.settings:
-        return '/settings';  
+        return '/settings';
       case RouteNames.editProfile:
-        return '/edit-profile';  
+        return '/edit-profile';
       case RouteNames.notifications:
         return '/notifications';
       case RouteNames.addItem:
@@ -92,16 +92,15 @@ enum RouteNames {
         return '/chat';
       case RouteNames.cart:
         return '/cart';
-
     }
   }
 }
 
 // GoRouter instance with auth redirect logic
 final appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey, 
+  navigatorKey: _rootNavigatorKey,
   initialLocation: RouteNames.splash.path,
-  debugLogDiagnostics: true, 
+  debugLogDiagnostics: true,
   refreshListenable: GoRouterRefreshStream(
     FirebaseAuth.instance.authStateChanges(),
   ),
@@ -112,7 +111,8 @@ final appRouter = GoRouter(
     final isLanding = state.matchedLocation == RouteNames.landing.path;
     final isLoggingIn = state.matchedLocation == RouteNames.login.path;
     final isRegistering = state.matchedLocation == RouteNames.register.path;
-    final isVerifyingEmail = state.matchedLocation == RouteNames.verifyEmail.path;
+    final isVerifyingEmail =
+        state.matchedLocation == RouteNames.verifyEmail.path;
 
     if (isSplash) return null;
 
@@ -122,7 +122,8 @@ final appRouter = GoRouter(
       return null;
     }
 
-    if (isLoggedIn && (isLanding || isLoggingIn || isRegistering || isVerifyingEmail)) {
+    if (isLoggedIn &&
+        (isLanding || isLoggingIn || isRegistering || isVerifyingEmail)) {
       return RouteNames.home.path;
     }
 
@@ -157,7 +158,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.notifications.path,
       name: RouteNames.notifications.name,
-      parentNavigatorKey: _rootNavigatorKey, 
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const NotificationKeywordsScreen(),
     ),
     GoRoute(
@@ -167,41 +168,37 @@ final appRouter = GoRouter(
       builder: (context, state) => const AddItemScreen(),
     ),
     GoRoute(
-      path: RouteNames.itemDetail.path,
+      path: '/item-detail/:itemId', 
       name: RouteNames.itemDetail.name,
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        // แกะกล่อง Map ที่ส่งมาจากหน้า Home
-        final extras = state.extra as Map<String, dynamic>; 
-        
-        return ItemDetailScreen(
-          item: extras['item'] as ItemModel,
-          isWatchlisted: extras['isWatchlisted'] as bool,
-          onWatchlistToggle: extras['onWatchlistToggle'] as VoidCallback,
-        );
+        final itemId = state.pathParameters['itemId']!;
+        // เราส่งแค่ ID มา แล้วให้หน้า Detail ไปโหลดข้อมูลผ่าน Provider โดยใช้ ID นี้
+        return ItemDetailScreen(itemId: itemId);
       },
     ),
     GoRoute(
       path: RouteNames.myListings.path,
       name: RouteNames.myListings.name,
-      parentNavigatorKey: _rootNavigatorKey, 
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const MyListingScreen(),
     ),
     GoRoute(
       path: RouteNames.settings.path,
       name: RouteNames.settings.name,
-      parentNavigatorKey: _rootNavigatorKey, 
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: RouteNames.order.path,
       name: RouteNames.order.name,
-      parentNavigatorKey: _rootNavigatorKey, 
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         // 1. แกะกล่อง Map เพื่อแยกรับ 2 ค่า (items และ isFromCart)
-        final extras = state.extra as Map<String, dynamic>; 
+        final extras = state.extra as Map<String, dynamic>;
         final items = extras['items'] as List<ItemModel>;
         final isFromCart = extras['isFromCart'] as bool? ?? false;
-        
+
         return OrderScreen(items: items, isFromCart: isFromCart);
       },
     ),
@@ -210,7 +207,7 @@ final appRouter = GoRouter(
       name: RouteNames.orderStatus.name,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final String orderId = state.extra as String; 
+        final String orderId = state.extra as String;
         return OrderStatusScreen(orderId: orderId);
       },
     ),
@@ -239,7 +236,7 @@ final appRouter = GoRouter(
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
     ShellRoute(
-      navigatorKey: _shellNavigatorKey, 
+      navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => MainShell(child: child),
       routes: [
         GoRoute(

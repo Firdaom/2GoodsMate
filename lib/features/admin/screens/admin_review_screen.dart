@@ -4,7 +4,7 @@ import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/models/report_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/moderation_service.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart'; // ✅ ใช้ Constant ของเรา
 
 class AdminReviewScreen extends StatelessWidget {
   const AdminReviewScreen({super.key});
@@ -15,11 +15,15 @@ class AdminReviewScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Admin Review'),
+          title: const Text('Admin Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          centerTitle: true,
           bottom: const TabBar(
+            labelColor: AppTheme.accent,
+            unselectedLabelColor: AppTheme.textMuted,
+            indicatorColor: AppTheme.accent,
             tabs: [
-              Tab(text: 'Pending Items'),
-              Tab(text: 'Flagged Items'),
+              Tab(text: 'Pending'),
+              Tab(text: 'Flagged'),
               Tab(text: 'Reports'),
             ],
           ),
@@ -41,29 +45,18 @@ class _PendingItemsTab extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection(FirebaseCollections.items)
-          .where('moderationStatus', isEqualTo: ModerationStatus.pending.name)
-          .orderBy('postedAt', descending: true)
+          .where(ItemFields.moderationStatus, isEqualTo: ModerationStatus.pending.name)
+          .orderBy(ItemFields.postedAt, descending: true) // อย่าลืมทำ Index ใน Firebase
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppTheme.accent),
-          );
+          return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
         }
 
-        final items =
-            snapshot.data?.docs
-                .map((d) => ItemModel.fromFirestore(d))
-                .toList() ??
-            [];
+        final items = snapshot.data?.docs.map((d) => ItemModel.fromFirestore(d)).toList() ?? [];
 
         if (items.isEmpty) {
-          return const Center(
-            child: Text(
-              'No pending items',
-              style: TextStyle(color: AppTheme.textMuted),
-            ),
-          );
+          return const Center(child: Text('No pending items', style: TextStyle(color: AppTheme.textMuted)));
         }
 
         return ListView.builder(
@@ -72,50 +65,34 @@ class _PendingItemsTab extends StatelessWidget {
           itemBuilder: (_, i) => _AdminItemCard(
             key: ValueKey(items[i].id),
             item: items[i],
-            onApprove: () => _approveItem(context, items[i].id),
-            onReject: () => _rejectItem(context, items[i].id),
+            onApprove: () => _updateStatus(context, items[i].id, ModerationStatus.approved),
+            onReject: () => _updateStatus(context, items[i].id, ModerationStatus.rejected),
           ),
         );
       },
     );
   }
 
-  Future<void> _approveItem(BuildContext context, String itemId) async {
+  Future<void> _updateStatus(BuildContext context, String itemId, ModerationStatus status) async {
     await FirebaseFirestore.instance
         .collection(FirebaseCollections.items)
         .doc(itemId)
         .update({
-          ItemFields.moderationStatus: ModerationStatus.approved.name,
-          'reviewedAt':
-              FieldValue.serverTimestamp(), // ถ้าใช้บ่อยให้เพิ่ม ItemFields.reviewedAt
-        });
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Item approved ✅')));
-    }
-  }
-
-  Future<void> _rejectItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance
-        .collection(FirebaseCollections.items)
-        .doc(itemId)
-        .update({
-          ItemFields.moderationStatus: ModerationStatus.rejected.name,
+          ItemFields.moderationStatus: status.name,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item rejected ❌'),
-          backgroundColor: AppTheme.danger,
+        SnackBar(
+          content: Text(status == ModerationStatus.approved ? 'Item approved ✅' : 'Item rejected ❌'),
+          backgroundColor: status == ModerationStatus.approved ? AppTheme.condNew : AppTheme.danger,
         ),
       );
     }
   }
 }
+
 
 // ✅ Tab 2: Flagged Items
 class _FlaggedItemsTab extends StatelessWidget {

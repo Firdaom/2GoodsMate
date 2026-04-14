@@ -1,12 +1,19 @@
-import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:anigoods/core/exceptions/app_exception.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Repository handling home screen operations
+
+final homeRepositoryProvider = Provider((ref) => HomeRepository(
+  firestore: FirebaseFirestore.instance,
+));
+
 class HomeRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
-  /// Get user's watchlist (list of item IDs)
+  HomeRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+
+  /// ดึงรายการ Watchlist ของ User
   Future<List<String>> getWatchlist(String uid) async {
     try {
       final doc = await _firestore
@@ -14,19 +21,19 @@ class HomeRepository {
           .doc(uid)
           .get();
       if (doc.exists) {
-        return List<String>.from(doc[UserFields.watchlist] ?? []);
+        return List<String>.from(doc.data()?[UserFields.watchlist] ?? []);
       }
       return [];
     } on FirebaseException catch (e) {
       throw AppException(
-        message: _getWatchlistUserMessage(e.code),
+        message: e.message ?? 'Failed to load watchlist',
         code: e.code,
         originalError: e,
       );
     }
   }
 
-  /// Add item to watchlist
+  /// เพิ่มไอเทมเข้า Watchlist
   Future<void> addToWatchlist({
     required String uid,
     required String itemId,
@@ -40,14 +47,14 @@ class HomeRepository {
           });
     } on FirebaseException catch (e) {
       throw AppException(
-        message: _getWatchlistUserMessage(e.code),
+        message: e.message ?? 'Failed to add to watchlist',
         code: e.code,
         originalError: e,
       );
     }
   }
 
-  /// Remove item from watchlist
+  /// ลบไอเทมออกจาก Watchlist
   Future<void> removeFromWatchlist({
     required String uid,
     required String itemId,
@@ -61,49 +68,11 @@ class HomeRepository {
           });
     } on FirebaseException catch (e) {
       throw AppException(
-        message: _getWatchlistUserMessage(e.code),
+        message: e.message ?? 'Failed to remove from watchlist',
         code: e.code,
         originalError: e,
       );
     }
   }
 
-  /// Update entire watchlist
-  Future<void> updateWatchlist({
-    required String uid,
-    required List<String> watchlist,
-  }) async {
-    try {
-      await _firestore
-          .collection(FirebaseCollections.users)
-          .doc(uid)
-          .update({UserFields.watchlist: watchlist});
-    } on FirebaseException catch (e) {
-      throw AppException(
-        message: _getWatchlistUserMessage(e.code),
-        code: e.code,
-        originalError: e,
-      );
-    }
-  }
-
-  /// Get user-friendly message for watchlist operations
-  String _getWatchlistUserMessage(String code) {
-    switch (code) {
-      case 'permission-denied':
-        return 'Permission denied. Please sign in again';
-      case 'not-found':
-        return 'Watchlist not found';
-      case 'failed-precondition':
-        return 'Cannot update watchlist at this time';
-      case 'unavailable':
-        return 'Service temporarily unavailable';
-      case 'deadline-exceeded':
-        return 'Request timed out. Please try again';
-      case 'unauthenticated':
-        return 'Please sign in to continue';
-      default:
-        return 'Failed to update watchlist. Please try again';
-    }
-  }
 }

@@ -1,20 +1,16 @@
-import 'package:anigoods/core/services/cart_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ เพิ่ม Riverpod
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/core/router/app_router.dart';
+import 'package:anigoods/features/cart/providers/cart_provider.dart';
 
-// ════════════════════════════════════════════════════════
-// SETTINGS
-// ════════════════════════════════════════════════════════
-
-// 🔥 เปลี่ยนกลับเป็น StatelessWidget ธรรมดา
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  // 1. ฟังก์ชันเปลี่ยนรหัสผ่าน (ส่งอีเมลไปให้ตั้งใหม่)
+  // 1. ฟังก์ชันเปลี่ยนรหัสผ่าน
   Future<void> _resetPassword(BuildContext context) async {
     final email = FirebaseAuth.instance.currentUser?.email;
     if (email == null) return;
@@ -32,42 +28,53 @@ class SettingsScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppTheme.danger),
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppTheme.danger,
+          ),
         );
       }
     }
   }
 
-  // 2. ฟังก์ชันเลือกภาษา (เปิด Bottom Sheet)
+  // 2. เลือกภาษา
   void _showLanguageSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             const Padding(
               padding: EdgeInsets.all(20),
-              child: Text('Select Language', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Select Language',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
             ListTile(
               leading: const Text('🇹🇭', style: TextStyle(fontSize: 24)),
               title: const Text('ภาษาไทย'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
               title: const Text('English'),
-              trailing: const Icon(Icons.check, color: AppTheme.accent), 
-              onTap: () {
-                Navigator.pop(context);
-              },
+              trailing: const Icon(Icons.check, color: AppTheme.accent),
+              onTap: () => Navigator.pop(context),
             ),
             const SizedBox(height: 20),
           ],
@@ -76,8 +83,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // 3. ฟังก์ชัน Log Out
-  void _showLogoutDialog(BuildContext context) {
+  // 3. Log Out
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -90,12 +97,10 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // ปิดหน้าต่าง Dialog ก่อน
-              CartService().clearLocalCart(); 
+              Navigator.pop(context);
+
               await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                context.go(RouteNames.login.path); 
-              }
+              if (context.mounted) context.go(RouteNames.login.path);
             },
             style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
             child: const Text('Log Out'),
@@ -106,13 +111,18 @@ class SettingsScreen extends StatelessWidget {
   }
 
   @override
-  // 🔥 เอา WidgetRef ref ออกไปให้เหลือแค่นี้
-  Widget build(BuildContext context) {
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
+        title: const Text(
+          'Settings',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
@@ -121,56 +131,42 @@ class SettingsScreen extends StatelessWidget {
           children: [
             const SectionLabel('PRIVACY & SECURITY'),
             const SizedBox(height: 8),
-            
             SettingsRow(
-              icon: Icons.lock_outline, 
+              icon: Icons.lock_outline,
               label: 'Change Password',
               onTap: () => _resetPassword(context),
             ),
-            
             SettingsRow(
-              icon: Icons.privacy_tip_outlined, 
+              icon: Icons.privacy_tip_outlined,
               label: 'Privacy Settings',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Privacy settings coming soon!')));
-              },
+              onTap: () {},
             ),
-            
+
             const SizedBox(height: 16),
             const SectionLabel('PREFERENCES'),
             const SizedBox(height: 8),
-            
             SettingsRow(
               icon: Icons.dark_mode_outlined,
               label: 'Dark Mode',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Dark mode toggle coming soon!'))
-                );
-              },
+              onTap: () {},
             ),
-            
             SettingsRow(
               icon: Icons.language,
               label: 'Language',
               onTap: () => _showLanguageSheet(context),
             ),
-            
+
             SettingsRow(
               icon: Icons.logout,
               label: 'Log Out',
-              
               danger: true,
-              onTap: () => _showLogoutDialog(context),
+              onTap: () => _showLogoutDialog(context, ref),
             ),
-            
             SettingsRow(
               icon: Icons.delete_outline,
               label: 'Delete Account',
               danger: true,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact support to delete account.')));
-              },
+              onTap: () {},
             ),
           ],
         ),

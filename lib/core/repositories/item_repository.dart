@@ -3,15 +3,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/services/storage_service.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart'; 
 import 'package:anigoods/core/constants/app_constants.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:anigoods/core/services/moderation_service.dart';
+
+final itemRepositoryProvider = Provider((ref) {
+  return ItemRepository();
+});
 
 class ItemRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final StorageService _storageService = StorageService();
 
-  /// Create new item with optional image
+  /// Create new item with multiple images
   Future<String> createItem({
     required String title,
     required String series,
@@ -21,45 +27,42 @@ class ItemRepository {
     required String condition,
     required String description,
     required List<String> tags,
-    required List<ContactLink> contactLinks,
-    List<XFile>? imageFiles,
+    List<XFile>? imageFiles, 
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    if (user == null) throw AppException(message: 'User not authenticated', code: 'auth-required');
 
-    // Get seller name and verified status
+    // 1. ดึงข้อมูลคนขาย 
     final userDoc = await _firestore
         .collection(FirebaseCollections.users)
         .doc(user.uid)
         .get();
+        
     final sellerName = userDoc.exists
-        ? (userDoc[UserFields.name] ?? user.email ?? '')
-        : (user.email ?? '');
+        ? (userDoc.data()?[UserFields.name] ?? user.email ?? 'Unknown Seller')
+        : (user.email ?? 'Unknown Seller');
     final sellerVerified = userDoc.exists
-        ? (userDoc[UserFields.isVerified] ?? false)
+        ? (userDoc.data()?[UserFields.isVerified] ?? false)
         : false;
 
-    // Create document reference first to get ID
+
     final docRef = _firestore.collection(FirebaseCollections.items).doc();
 
-    // Upload images if provided
+    // อัปโหลดรูปภาพ  
     List<String> imageUrls = [];
     if (imageFiles != null && imageFiles.isNotEmpty) {
-      for (int i = 0; i < imageFiles.length; i++) {
+      for (var file in imageFiles) {
         final imageUrl = await _storageService
             .uploadItemImage(
-              itemId: '${docRef.id}_$i', // Add index to make unique
-              imageFile: imageFiles[i],
+              itemId: docRef.id, 
+              imageFile: file,
             )
-            .timeout(
-              AppConstants.imageUploadTimeout,
-              onTimeout: () => throw Exception('Image upload timeout'),
-            );
+            .timeout(AppConstants.imageUploadTimeout);
         imageUrls.add(imageUrl);
       }
     }
 
-    // Create item model
+    //  สร้าง Model เริ่มต้น
     var item = ItemModel(
       id: docRef.id,
       title: title,
@@ -74,55 +77,49 @@ class ItemRepository {
       sellerVerified: sellerVerified,
       description: description,
       tags: tags,
-      contactLinks: contactLinks,
       postedAt: DateTime.now(),
       moderationStatus: ModerationStatus.pending, 
       qualityScore: 0, 
       reportCount: 0,
-      flaggedAt: null,
     );
 
-    // 2. 🧠 ให้ ModerationService ตรวจสอบและให้คะแนน
+    // 4. ตรวจสอบเนื้อหา 
     final modResult = await ModerationService.checkItem(item);
     final score = ModerationService.calculateQualityScore(item);
 
-    // 3. 🚨 ถ้าตรวจพบคำหยาบ/สแปมรุนแรง (Rejected) ให้เด้ง Error กลับไปที่หน้าจอเลย!
     if (modResult.status == ModerationStatus.rejected) {
-      // (อย่าลืม import AppException มาใช้ในไฟล์นี้ด้วยนะครับ ถ้ายังไม่มี)
       throw AppException(
         message: modResult.reason ?? 'Item rejected by moderation system.',
         code: 'moderation-rejected',
       );
     }
 
-    // 4. อัปเดต Model ด้วยสถานะและคะแนนที่ตรวจเสร็จแล้ว
+    //  อัปเดต Model ด้วยผลการตรวจ
     item = item.copyWith(
       moderationStatus: modResult.status,
       qualityScore: score,
     );
 
-    // 5. 💾 Save to Firestore (เซฟของที่ผ่านการตรวจแล้วเท่านั้น)
+    // 6. Save to Firestore
     await docRef
         .set(item.toFirestore())
-        .timeout(
-          AppConstants.firestoreSaveTimeout,
-          onTimeout: () => throw Exception('Failed to save item'),
-        );
-
-    return docRef.id;
+        .timeout(AppConstants.firestoreSaveTimeout);
 
     return docRef.id;
   }
 
   /// Update existing item
   Future<void> updateItem(String itemId, Map<String, dynamic> updates) async {
-    await _firestore.collection(FirebaseCollections.items).doc(itemId).update(updates);
+    await _firestore
+        .collection(FirebaseCollections.items)
+        .doc(itemId)
+        .update(updates);
   }
 
-  /// Delete item
+  /// Delete item and its images
   Future<void> deleteItem(String itemId) async {
     await _firestore.collection(FirebaseCollections.items).doc(itemId).delete();
-    await _storageService.deleteItemImage(itemId);
+    await _storageService.deleteItemImages(itemId); 
   }
 
   /// Get item by ID

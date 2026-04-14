@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
-import '../exceptions/app_exception.dart';
+import 'package:anigoods/core/exceptions/app_exception.dart';
+import 'package:anigoods/core/constants/firebase_constants.dart';
 
 class StorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -14,29 +14,32 @@ class StorageService {
     required XFile imageFile,
   }) async {
     try {
-      final ref = _storage.ref().child('items/$itemId.jpg');
+      //  สร้างชื่อไฟล์ที่ไม่ซ้ำกันด้วย Timestamp 
+      final uniqueFileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      
+      //  ใช้ Constants และจัดเก็บแบบโฟลเดอร์: items/itemId/161234567.jpg
+      final path = '${StoragePaths.itemImages}/$itemId/$uniqueFileName';
+      final ref = _storage.ref().child(path);
 
-      debugPrint('📤 Uploading image to: items/$itemId.jpg');
+      debugPrint('📤 Uploading image to: $path');
 
       // Upload based on platform
       if (kIsWeb) {
         final bytes = await imageFile.readAsBytes();
-        debugPrint('   File size: ${bytes.length} bytes');
         await ref.putData(bytes);
       } else {
         final file = File(imageFile.path);
-        final fileSize = await file.length();
-        debugPrint('   File size: $fileSize bytes');
         await ref.putFile(file);
       }
 
       final downloadUrl = await ref.getDownloadURL();
       debugPrint('✅ Upload successful, URL: $downloadUrl');
       return downloadUrl;
+
     } on FirebaseException catch (e) {
       debugPrint('❌ Upload failed: $e');
       throw AppException(
-        message: _getUserMessage(e.code),
+        message: e.message ?? 'Storage error occurred', 
         code: e.code,
         originalError: e,
       );
@@ -50,44 +53,29 @@ class StorageService {
     }
   }
 
-  /// Delete item image
-  Future<void> deleteItemImage(String itemId) async {
+  /// Delete ALL item images (เมื่อผู้ใช้ลบโพสต์สินค้า)
+  Future<void> deleteItemImages(String itemId) async {
     try {
-      final ref = _storage.ref().child('items/$itemId.jpg');
-      await ref.delete();
-      debugPrint('🗑️ Deleted image: items/$itemId.jpg');
+      // ✅ 5. อ้างอิงไปที่ "โฟลเดอร์" ของสินค้านั้นๆ
+      final folderRef = _storage.ref().child('${StoragePaths.itemImages}/$itemId');
+      
+      // ดึงรายชื่อไฟล์ทั้งหมดในโฟลเดอร์นี้
+      final listResult = await folderRef.listAll();
+      
+      // วนลูปสั่งลบทีละไฟล์ (เพราะ Firebase Storage สั่งลบโฟลเดอร์ตรงๆ ไม่ได้)
+      for (var item in listResult.items) {
+        await item.delete();
+      }
+      
+      debugPrint('🗑️ Deleted all images for item: $itemId');
     } on FirebaseException catch (e) {
-      // If object-not-found, it's okay (already deleted)
-      if (e.code == 'object-not-found') {
-        debugPrint('ℹ️ Image not found (already deleted): items/$itemId.jpg');
+      if (e.code == StorageErrorCodes.objectNotFound) {
+        debugPrint('ℹ️ Image folder not found (already deleted)');
         return;
       }
-      // For other errors, log but don't throw (deletion is not critical)
-      debugPrint('⚠️ Failed to delete image: $e');
+      debugPrint('⚠️ Failed to delete images: $e');
     } catch (e) {
-      debugPrint('⚠️ Failed to delete image: $e');
-    }
-  }
-
-  /// Get user-friendly error message from Firebase error code
-  String _getUserMessage(String errorCode) {
-    switch (errorCode) {
-      case 'storage/unauthorized':
-        return 'You do not have permission to upload images';
-      case 'storage/canceled':
-        return 'Upload was cancelled';
-      case 'storage/unknown':
-        return 'An unknown error occurred while uploading';
-      case 'storage/object-not-found':
-        return 'File not found';
-      case 'storage/quota-exceeded':
-        return 'Storage quota exceeded';
-      case 'storage/unauthenticated':
-        return 'Please sign in to upload images';
-      case 'storage/retry-limit-exceeded':
-        return 'Upload timeout. Please try again';
-      default:
-        return 'Failed to upload image';
+      debugPrint('⚠️ Failed to delete images: $e');
     }
   }
 }

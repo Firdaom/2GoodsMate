@@ -1,8 +1,6 @@
 /// ════════════════════════════════════════════════════════
 /// APP EXCEPTION
-/// ────────────────────────────────────────────────────────
-/// Custom exception for consistent error handling across the app
-/// ════════════════════════════════════════════════════════
+
 
 class AppException implements Exception {
   final String message;
