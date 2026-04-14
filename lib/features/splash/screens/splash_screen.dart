@@ -63,8 +63,8 @@ class _SplashScreenState extends State<SplashScreen>
               // Logo
               Image.asset(
                 'assets/splash.png',
-                width: 400,
-                height: 400,
+                width: MediaQuery.of(context).size.width * 0.6,
+                height: MediaQuery.of(context).size.height * 0.4,
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 24),
