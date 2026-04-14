@@ -294,38 +294,42 @@ class _ProductPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.width < 800 ? 300.0 : 420.0;
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    final height = isMobile ? 300.0 : 420.0;
+    
+    final double offsetAmount = isMobile ? 40.0 : 70.0;
 
     return SizedBox(
       height: height,
       child: Stack(
         clipBehavior: Clip.none,
-        alignment: Alignment.center,
+        alignment: Alignment.center, 
         children: [
-          // รูปหลัง (app1 - splash) เอียงซ้าย
-          Positioned(
-            left: 30,
-            child: Transform.rotate(
-              angle: 0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  'assets/app1.png',
-                  height: height ,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-          // รูปหน้า (app2 - listing) เอียงขวานิดหน่อย
-          Positioned(
-            right: 40,
+          // 📱 รูปหลัง (app1 - splash) เอียงซ้าย
+          Transform.translate(
+            offset: Offset(-offsetAmount, 0), 
             child: Transform.rotate(
               angle: 0,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
                   'assets/app2.png',
+                  height: height,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          
+          // 📱 รูปหน้า (app2 - listing) เอียงขวา
+          Transform.translate(
+            offset: Offset(offsetAmount, 0), 
+            child: Transform.rotate(
+              angle: 0.1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/app1.png',
                   height: height,
                   fit: BoxFit.cover,
                 ),
