@@ -1,3 +1,13 @@
+
+import java.util.Properties
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
+}
+
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -9,7 +19,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.anigoods"
+    namespace = "com.twogoodsmate.anigoods"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +34,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.anigoods"
+        applicationId = "com.twogoodsmate.anigoods"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -33,13 +43,29 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+            storePassword = keystoreProperties.getProperty("storePassword")
         }
     }
+
+    buildTypes {
+        release {
+            // ดึง config ที่เราเพิ่งสร้างข้างบนมาใช้
+            signingConfig = signingConfigs.getByName("release")
+            
+            // ในไฟล์ .kts ต้องใช้ is นำหน้าแบบนี้ครับ
+            isMinifyEnabled = false 
+            isShrinkResources = false
+            
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    
 }
 
 flutter {

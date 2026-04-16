@@ -177,7 +177,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 },
               ),
               SettingsRow(icon: Icons.inventory_2_outlined, label: 'My Listings', onTap: () => context.push(RouteNames.myListings.path)),
-              SettingsRow(icon: Icons.storefront_outlined, label: 'Switch Role', onTap: () {}),
+              SettingsRow(icon: Icons.storefront_outlined, label: 'Switch Role', onTap: () => context.push(RouteNames.becomeSeller.path)),
               SettingsRow(icon: Icons.settings_outlined, label: 'Settings', onTap: () => context.push(RouteNames.settings.path)),
             ],
           ),

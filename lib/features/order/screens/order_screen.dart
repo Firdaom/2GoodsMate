@@ -10,30 +10,110 @@ import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/models/order_model.dart';
 import 'package:anigoods/features/order/services/order_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:anigoods/features/order/services/order_service.dart';
 
-class OrderScreen extends ConsumerWidget {
+class OrderScreen extends ConsumerStatefulWidget {
   final List<ItemModel> items;
   final bool isFromCart;
 
   const OrderScreen({super.key, required this.items, this.isFromCart = false});
 
+  @override
+  ConsumerState<OrderScreen> createState() => _OrderScreenState();
+}
+
+class _OrderScreenState extends ConsumerState<OrderScreen> {
+  // เก็บที่อยุ่
+  Map<String, dynamic> _currentAddress = {
+    'name': '',
+    'phone': '',
+    'detail': '',
+  };
+
+  bool get _hasAddress => 
+      _currentAddress['name'].isNotEmpty && 
+      _currentAddress['phone'].isNotEmpty && 
+      _currentAddress['detail'].isNotEmpty;
+
   String _formatPrice(double price) => price
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    const double deliveryFee = 50.0;
-    final double subtotal = items.fold(0, (sum, item) => sum + item.price);
-    final double totalPrice = subtotal + deliveryFee;
+  // ฟังก์ชันแสดงหน้าต่างแก้ไขที่อยู่
+  void _showEditAddressDialog() {
+    final nameCtrl = TextEditingController(text: _currentAddress['name']);
+    final phoneCtrl = TextEditingController(text: _currentAddress['phone']);
+    final detailCtrl = TextEditingController(text: _currentAddress['detail']);
 
-    // จำลองที่อยู่ (ในอนาคตควรดึงจาก ProfileProvider)
-    final Map<String, dynamic> currentAddress = {
-      'name': 'John Doe',
-      'phone': '+66 81 234 5678',
-      'detail': '123 Anime Street, Bangkok 10110',
-    };
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Delivery Address', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDialogTextField('Full Name', nameCtrl),
+              const SizedBox(height: 12),
+              _buildDialogTextField('Phone Number', phoneCtrl, keyboardType: TextInputType.phone),
+              const SizedBox(height: 12),
+              _buildDialogTextField('Full Address', detailCtrl, maxLines: 3),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accent,
+              foregroundColor: AppTheme.background,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              // อัปเดตข้อมูลบนหน้าจอเมื่อกด Save
+              setState(() {
+                _currentAddress = {
+                  'name': nameCtrl.text.trim(),
+                  'phone': phoneCtrl.text.trim(),
+                  'detail': detailCtrl.text.trim(),
+                };
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Save Address', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper สำหรับสร้างช่องกรอกใน Dialog ให้ดูคลีน
+  Widget _buildDialogTextField(String label, TextEditingController controller, {int maxLines = 1, TextInputType? keyboardType}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+        filled: true,
+        fillColor: AppTheme.background,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const double deliveryFee = 50.0;
+    final double subtotal = widget.items.fold(0, (sum, item) => sum + item.price);
+    final double totalPrice = subtotal + deliveryFee;
 
     return Scaffold(
       appBar: AppBar(
@@ -52,10 +132,10 @@ class OrderScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             _buildInfoCard(
               icon: Icons.location_on_outlined,
-              title: '${currentAddress['name']} (${currentAddress['phone']})',
-              subtitle: currentAddress['detail'],
+             title: _hasAddress ? '${_currentAddress['name']} (${_currentAddress['phone']})' : 'No Shipping Address',
+              subtitle: _hasAddress ? _currentAddress['detail'] : 'Tap here to add your delivery address',
               actionIcon: Icons.edit_outlined,
-              onTap: () {},
+              onTap: _showEditAddressDialog,
             ),
             const SizedBox(height: 24),
 
@@ -83,12 +163,11 @@ class OrderScreen extends ConsumerWidget {
         context,
         ref,
         totalPrice,
-        currentAddress,
+        _currentAddress, 
       ),
     );
   }
 
-  //  ส่วนบันทึกออเดอร์
   Widget _buildBottomBar(
     BuildContext context,
     WidgetRef ref,
@@ -103,56 +182,67 @@ class OrderScreen extends ConsumerWidget {
       ),
       child: SafeArea(
         child: SizedBox(
-              height: 52,
-              width: double.infinity,
-              child: PrimaryButton(
-                label: 'Place Order • ฿${_formatPrice(totalPrice)}',
-              onTap: () async {
-                final currentUser = FirebaseAuth.instance.currentUser;
-                if (currentUser == null) return;
+          height: 52,
+          width: double.infinity,
+          child: PrimaryButton(
+            label: 'Place Order • ฿${_formatPrice(totalPrice)}',
+            onTap: () async {
+              
+              if (!_hasAddress) {
+                _showEditAddressDialog();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please add a shipping address first.'),
+                    backgroundColor: AppTheme.danger,
+                  ),
+                );
+                return; 
+              }
 
-                // แสดง Loading
-                _showLoadingDialog(context);
+              //  ถ้ามีที่อยู่แล้ว ถึงจะเริ่มเซฟออเดอร์
+              final currentUser = FirebaseAuth.instance.currentUser;
+              if (currentUser == null) return;
 
-                try {
-                  final orderService = ref.read(orderServiceProvider);
+              // แสดง Loading
+              _showLoadingDialog(context);
 
-                  //  บันทึกออเดอร์ทีละชิ้น
-                  for (var item in items) {
-                    final newOrder = OrderModel(
-                      id: '',
-                      itemId: item.id,
-                      buyerId: currentUser.uid,
-                      sellerId: item.sellerId,
-                      status: OrderStatus.toShip,
-                      totalPrice: item.price,
-                      shippingAddress: address,
-                      createdAt: DateTime.now(),
-                    );
-                    await orderService.createOrder(newOrder);
-                  }
+              try {
+                final orderService = ref.read(orderServiceProvider);
 
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    _showSuccessDialog(context);
-
-                    //ล้างตะกร้า
-                    if (isFromCart) {
-                      ref.read(cartProvider.notifier).clearCart();
-                    }
-                  }
-                } catch (e) {
-                  if (context.mounted) Navigator.pop(context);
-                  _showErrorSnackBar(context, e);
+                // บันทึกออเดอร์ทีละชิ้น
+                for (var item in widget.items) {
+                  final newOrder = OrderModel(
+                    id: '',
+                    itemId: item.id,
+                    buyerId: currentUser.uid,
+                    sellerId: item.sellerId,
+                    status: OrderStatus.toShip,
+                    totalPrice: item.price,
+                    shippingAddress: address, 
+                    createdAt: DateTime.now(),
+                  );
+                  await orderService.createOrder(newOrder);
                 }
-              },
-            ),
-          ),
+
+                if (context.mounted) {
+                  Navigator.pop(context); // ปิด Loading
+                  _showSuccessDialog(context); // โชว์หน้าต่างสำเร็จ
+
+                  // ล้างตะกร้า
+                  if (widget.isFromCart) {
+                    ref.read(cartProvider.notifier).clearCart();
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) Navigator.pop(context);
+                _showErrorSnackBar(context, e);
+              }
+            }, 
+          ), 
         ),
+      ),
     );
   }
-
-  // --- Helper Widgets (UI) ---
 
   void _showLoadingDialog(BuildContext context) {
     showDialog(
@@ -206,7 +296,7 @@ class OrderScreen extends ConsumerWidget {
         border: Border.all(color: AppTheme.border),
       ),
       child: Column(
-        children: items
+        children: widget.items
             .map(
               (item) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),

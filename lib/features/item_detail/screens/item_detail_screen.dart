@@ -276,113 +276,133 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     );
   }
 
- Widget _buildBottomBar(BuildContext context, ItemModel item) {
+Widget _buildBottomBar(BuildContext context, ItemModel item) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppTheme.background,
-        border: const Border(top: BorderSide(color: AppTheme.border)),
+        border: Border(top: BorderSide(color: AppTheme.border)),
       ),
       child: SafeArea(
         child: Row(
           children: [
+            // 💬 ปุ่ม Chat (ใหม่!)
+            SizedBox(
+              height: 52,
+              width: 52, 
+              child: OutlinedButton(
+                onPressed: () {
+                  // เคลียร์ SnackBar ก่อนไปหน้าแชท
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  
+                  //  ส่งไปหน้าแชท พร้อมแนบชื่อคนขายไปด้วย
+                  context.push(RouteNames.chat.path, extra: item.sellerName);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.zero, // ลบ padding เดิมออก
+                  side: const BorderSide(color: AppTheme.accentLight), 
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.sms_outlined,
+                  color: AppTheme.textPrimary, 
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+
             // 🛒 ปุ่ม Add to Cart 
-            Expanded(
-              child: SizedBox(
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).clearSnackBars();
-
-                    // 2. Logic เพิ่มของลงตะกร้า (ใช้ Riverpod)
-                    ref.read(cartProvider.notifier).addItem(item); 
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: AppTheme.textPrimary, // สีเข้มเท่ๆ
-                        elevation: 6,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16), 
-                        ),
-                        behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.only(bottom: 90, left: 20, right: 20),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        duration: const Duration(milliseconds: 1500),
-                        content: Row(
-                          children: [
-                            // 🛒 ไอคอนวงกลม
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Colors.white24,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.shopping_bag_outlined,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            
-                            // 📝 ข้อความแจ้งเตือน
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'Added to Cart',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    item.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+            SizedBox(
+              height: 52,
+              width: 52, // บังคับให้เป็นจัตุรัส
+              child: OutlinedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ref.read(cartProvider.notifier).addItem(item); 
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppTheme.textPrimary, 
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16), 
                       ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.accent),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.only(bottom: 90, left: 20, right: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      duration: const Duration(milliseconds: 1500),
+                      content: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.white24,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Added to Cart',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  side: const BorderSide(color: AppTheme.accentLight), // อันนี้สีฟ้า
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.add_shopping_cart,
-                    color: AppTheme.accent,
-                  ),
+                ),
+                child: const Icon(
+                  Icons.add_shopping_cart,
+                  color: AppTheme.accent, // สีฟ้า
+                  size: 22,
                 ),
               ),
             ),
             const SizedBox(width: 12),
             
-            // ⚡ ปุ่ม Order Now (ซื้อทันที)
+            // ปุ่ม Order Now
             Expanded(
-              flex: 2,
               child: SizedBox(
                 height: 52,
                 child: PrimaryButton(
                   label: 'Order Now',
                   onTap: () {
-                    // เคลียร์ SnackBar ก่อนไปหน้าสั่งซื้อ
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    
                     context.push(RouteNames.order.path, extra: {
                       'items': [item],
                       'isFromCart': false,

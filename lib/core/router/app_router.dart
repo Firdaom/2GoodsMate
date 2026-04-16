@@ -3,6 +3,7 @@ import 'package:anigoods/features/auth/screens/privacy_screen.dart';
 import 'package:anigoods/features/auth/screens/terms_screen.dart';
 import 'package:anigoods/features/chat/screens/chat_room_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
+import 'package:anigoods/features/profile/screens/become_seller_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -53,7 +54,8 @@ enum RouteNames {
   chat,
   cart,
   terms,
-  privacy;
+  privacy,
+  becomeSeller;
 
   // Helper getter
   String get path {
@@ -100,6 +102,8 @@ enum RouteNames {
         return '/terms';
       case RouteNames.privacy:
         return '/privacy';
+      case RouteNames.becomeSeller:
+        return '/become-seller';
 
     }
   }
@@ -254,7 +258,11 @@ final appRouter = GoRouter(
       name: RouteNames.privacy.name,
       builder: (context, state) => const PrivacyScreen(),
     ),
-
+    GoRoute(
+      path: RouteNames.becomeSeller.path,
+      name: RouteNames.becomeSeller.name,
+      builder: (context, state) => const BecomeSellerScreen(),
+    ),
 
     // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
     ShellRoute(

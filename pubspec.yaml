@@ -2,7 +2,7 @@ name: anigoods
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: ^3.10.8
@@ -57,6 +57,7 @@ dev_dependencies:
   riverpod_generator: ^2.4.3
   freezed: ^2.5.7
   json_serializable: ^6.8.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -72,3 +73,9 @@ flutter:
   #       - asset: assets/fonts/Roboto-Regular.ttf
   #       - asset: assets/fonts/Roboto-Bold.ttf
   #         weight: 700
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: false
+  image_path: "assets/logo.png" 
+  adaptive_icon_foreground: "assets/logo.png"

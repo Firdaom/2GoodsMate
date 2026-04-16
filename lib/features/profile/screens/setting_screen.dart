@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ เพิ่ม Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
@@ -110,6 +110,71 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  // 4. ลบบัญชีแบบต่อจริงกับ Firebase
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account', style: TextStyle(color: AppTheme.danger)),
+        content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // ปิด Dialog ก่อนทำงาน
+              
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  await user.delete(); // สั่งลบจาก Firebase Auth ของจริง
+                  
+                  if (context.mounted) {
+                    context.go(RouteNames.login.path); // เตะกลับหน้า Login
+                  }
+                }
+              } on FirebaseAuthException catch (e) {
+                // ดัก Error กรณีเซสชันหมดอายุ (ต้องล็อกอินใหม่ก่อนลบ)
+                if (e.code == 'requires-recent-login') {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please log out and log in again before deleting your account.'),
+                        backgroundColor: AppTheme.danger,
+                      ),
+                    );
+                  }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.message}'),
+                        backgroundColor: AppTheme.danger,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.danger,
+                    ),
+                  );
+                }
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -166,7 +231,7 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.delete_outline,
               label: 'Delete Account',
               danger: true,
-              onTap: () {},
+              onTap: () => _showDeleteAccountDialog(context, ref), // เปลี่ยนให้เรียกใช้ฟังก์ชันจริง
             ),
           ],
         ),

@@ -58,3 +58,6 @@ android/key.properties
 *.jks
 
 .firebase/
+
+android/app/upload-keystore.jks
+android/key.properties

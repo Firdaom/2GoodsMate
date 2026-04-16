@@ -1,4 +1,4 @@
-package com.example.anigoods
+package com.twogoodsmate.anigoods
 
 import io.flutter.embedding.android.FlutterActivity
 
