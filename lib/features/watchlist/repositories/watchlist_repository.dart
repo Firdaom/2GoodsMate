@@ -1,4 +1,4 @@
-import 'package:anigoods/core/constants/firebase_constants.dart'; // ✅ เช็คชื่อไฟล์ Constant ของคุณ
+import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +27,7 @@ class WatchlistRepository {
       }
       return [];
     } catch (e) {
-      debugPrint('🔥 Error getting watchlist: $e');
+      debugPrint(' Error getting watchlist: $e');
       return [];
     }
   }
@@ -54,7 +54,7 @@ class WatchlistRepository {
         });
       }
     } catch (e) {
-      debugPrint('🔥 Error toggling watchlist: $e');
+      debugPrint(' Error toggling watchlist: $e');
       rethrow;
     }
   }

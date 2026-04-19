@@ -1,3 +1,4 @@
+import 'package:anigoods/core/widgets/item_image.dart';
 import 'package:anigoods/features/cart/providers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +7,6 @@ import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/core/router/app_router.dart';
-import 'package:anigoods/core/utils/snackbar_helper.dart';
 import 'package:anigoods/features/item_detail/providers/item_detail_provider.dart';
 import 'package:anigoods/features/watchlist/providers/watchlist_provider.dart';
 import 'package:anigoods/features/report/screens/report_screen.dart';
@@ -292,10 +292,8 @@ Widget _buildBottomBar(BuildContext context, ItemModel item) {
               width: 52, 
               child: OutlinedButton(
                 onPressed: () {
-                  // เคลียร์ SnackBar ก่อนไปหน้าแชท
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   
-                  //  ส่งไปหน้าแชท พร้อมแนบชื่อคนขายไปด้วย
                   context.push(RouteNames.chat.path, extra: item.sellerName);
                 },
                 style: OutlinedButton.styleFrom(

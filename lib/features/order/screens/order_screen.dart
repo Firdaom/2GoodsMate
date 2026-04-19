@@ -1,5 +1,5 @@
+import 'package:anigoods/core/widgets/item_image.dart';
 import 'package:anigoods/features/cart/providers/cart_provider.dart';
-import 'package:anigoods/features/cart/services/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,7 +22,6 @@ class OrderScreen extends ConsumerStatefulWidget {
 }
 
 class _OrderScreenState extends ConsumerState<OrderScreen> {
-  // เก็บที่อยุ่
   Map<String, dynamic> _currentAddress = {
     'name': '',
     'phone': '',
@@ -74,7 +73,6 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
-              // อัปเดตข้อมูลบนหน้าจอเมื่อกด Save
               setState(() {
                 _currentAddress = {
                   'name': nameCtrl.text.trim(),
@@ -91,7 +89,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     );
   }
 
-  // Helper สำหรับสร้างช่องกรอกใน Dialog ให้ดูคลีน
+
   Widget _buildDialogTextField(String label, TextEditingController controller, {int maxLines = 1, TextInputType? keyboardType}) {
     return TextField(
       controller: controller,
@@ -199,7 +197,6 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 return; 
               }
 
-              //  ถ้ามีที่อยู่แล้ว ถึงจะเริ่มเซฟออเดอร์
               final currentUser = FirebaseAuth.instance.currentUser;
               if (currentUser == null) return;
 
@@ -225,8 +222,8 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                 }
 
                 if (context.mounted) {
-                  Navigator.pop(context); // ปิด Loading
-                  _showSuccessDialog(context); // โชว์หน้าต่างสำเร็จ
+                  Navigator.pop(context); 
+                  _showSuccessDialog(context); 
 
                   // ล้างตะกร้า
                   if (widget.isFromCart) {

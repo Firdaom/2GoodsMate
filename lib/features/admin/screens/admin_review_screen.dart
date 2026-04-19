@@ -4,7 +4,7 @@ import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/models/report_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/moderation_service.dart';
-import 'package:anigoods/core/constants/firebase_constants.dart'; // ✅ ใช้ Constant ของเรา
+import 'package:anigoods/core/constants/firebase_constants.dart'; 
 
 class AdminReviewScreen extends StatelessWidget {
   const AdminReviewScreen({super.key});
@@ -36,7 +36,7 @@ class AdminReviewScreen extends StatelessWidget {
   }
 }
 
-// ✅ Tab 1: Pending Items (รอ review)
+// Pending Items 
 class _PendingItemsTab extends StatelessWidget {
   const _PendingItemsTab();
 
@@ -94,7 +94,7 @@ class _PendingItemsTab extends StatelessWidget {
 }
 
 
-// ✅ Tab 2: Flagged Items
+// Flagged Items
 class _FlaggedItemsTab extends StatelessWidget {
   const _FlaggedItemsTab();
 
@@ -144,47 +144,67 @@ class _FlaggedItemsTab extends StatelessWidget {
   }
 
   Future<void> _unflagItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance
-        .collection(FirebaseCollections.items)
-        .doc(itemId)
-        .update({
-          'moderationStatus': ModerationStatus.approved.name,
-          'reviewedAt': FieldValue.serverTimestamp(),
-        });
+    final db = FirebaseFirestore.instance;
+    final batch = db.batch(); 
 
-    // Mark all reports as reviewed
-    final reports = await FirebaseFirestore.instance
-        .collection(FirebaseCollections.reports)
+    // 1. อัปเดตสถานะ Item
+    final itemRef = db.collection(FirebaseCollections.items).doc(itemId);
+    batch.update(itemRef, {
+      'moderationStatus': ModerationStatus.approved.name,
+      'reviewedAt': FieldValue.serverTimestamp(),
+    });
+
+    final reports = await db.collection(FirebaseCollections.reports)
         .where('itemId', isEqualTo: itemId)
         .get();
 
     for (var doc in reports.docs) {
-      await doc.reference.update({
+      batch.update(doc.reference, { 
         'reviewed': true,
         'adminNote': 'Item approved after review',
       });
     }
 
+    // 3. สั่ง Commit ส่งข้อมูลทั้งหมดรวดเดียว!
+    await batch.commit();
+
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Item unflagged ✅')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item unflagged ')),
+      );
     }
   }
 
   Future<void> _rejectItem(BuildContext context, String itemId) async {
-    await FirebaseFirestore.instance
-        .collection(FirebaseCollections.items)
-        .doc(itemId)
-        .update({
-          'moderationStatus': ModerationStatus.rejected.name,
-          'reviewedAt': FieldValue.serverTimestamp(),
-        });
+    final db = FirebaseFirestore.instance;
+    final batch = db.batch(); 
+
+    // 1. อัปเดตสถานะ Item เป็น Reject
+    final itemRef = db.collection(FirebaseCollections.items).doc(itemId);
+    batch.update(itemRef, {
+      'moderationStatus': ModerationStatus.rejected.name,
+      'reviewedAt': FieldValue.serverTimestamp(),
+    });
+
+    // 2. ปิดเคส Report ทุกใบที่เกี่ยวกับสินค้านี้
+    final reports = await db.collection(FirebaseCollections.reports)
+        .where('itemId', isEqualTo: itemId)
+        .get();
+
+    for (var doc in reports.docs) {
+      batch.update(doc.reference, {
+        'reviewed': true,
+        'adminNote': 'Item rejected and removed',
+      });
+    }
+
+    // 3. สั่ง Commit รวดเดียวจบ
+    await batch.commit();
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Item removed ❌'),
+          content: Text('Item removed '),
           backgroundColor: AppTheme.danger,
         ),
       );
@@ -192,7 +212,7 @@ class _FlaggedItemsTab extends StatelessWidget {
   }
 }
 
-// ✅ Tab 3: Reports
+// Tab 3: Reports
 class _ReportsTab extends StatelessWidget {
   const _ReportsTab();
 

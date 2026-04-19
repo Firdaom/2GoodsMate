@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/core/router/app_router.dart';
-import 'package:anigoods/features/cart/providers/cart_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -129,7 +128,7 @@ class SettingsScreen extends ConsumerWidget {
               try {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
-                  await user.delete(); // สั่งลบจาก Firebase Auth ของจริง
+                  await user.delete(); 
                   
                   if (context.mounted) {
                     context.go(RouteNames.login.path); // เตะกลับหน้า Login

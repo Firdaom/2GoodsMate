@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/error_handler.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/features/auth/services/auth_service.dart';
 
-// ══════════════════════════════════════════════════════════
 // REGISTER SCREEN
-// ══════════════════════════════════════════════════════════
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
   @override
@@ -24,17 +20,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
 
-  //  สร้างตัวจับโฟกัส (FocusNode)
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmFocus = FocusNode();
 
-  // ตัวแปรเช็คว่า "เคยคลิกเข้าแล้วออกหรือยัง?" (Touched)
   bool _emailTouched = false;
   bool _passwordTouched = false;
   bool _confirmTouched = false;
-
-  //ตัวแปรใหม่สำหรับเช็คการกดติ๊กถูกข้อตกลง
   bool _agreedToTerms = false;
 
   late final TapGestureRecognizer _termsRecognizer;
@@ -122,7 +114,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // เซฟตี้อีกชั้น: ถ้าเผลอกดได้ทั้งที่ยังไม่ติ๊กถูก ให้เด้งออกทันที
     if (!_agreedToTerms) return;
 
     setState(() {
@@ -272,15 +263,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _agreedToTerms = value ?? false;
                         });
                       },
-                      activeColor: AppTheme.accent, // สีกล่องตอนติ๊กถูก
-                      checkColor: AppTheme.background, // สีเครื่องหมายถูก
+                      activeColor: AppTheme.accent, 
+                      checkColor: AppTheme.background, 
                       side: const BorderSide(
                         color: AppTheme.textMuted,
                         width: 1.5,
                       ), // สีกล่องตอนยังไม่ติ๊ก
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
-                      ), // ลบมุมกล่องนิดนึง
+                      ), 
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -322,7 +313,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // อัปเดตปุ่ม Create Account
               PrimaryButton(
                 label: 'Create Account',
-                //  เช็คเงื่อนไข: ถ้ากำลังโหลด หรือ ยังไม่ติ๊กถูก ให้ปุ่มเป็น null (กดไม่ได้)
                 onTap: (_loading || !_agreedToTerms) ? null : _register,
                 loading: _loading,
               ),
@@ -357,9 +347,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// ══════════════════════════════════════════════════════════
 // SHARED WIDGETS
-// ══════════════════════════════════════════════════════════
 class _Logo extends StatelessWidget {
   final String subtitle;
   const _Logo({this.subtitle = 'Find your anime collectibles'});

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 
+// ขึ้นแค่ฟอร์มเฉยๆ 
+
 class BecomeSellerScreen extends StatefulWidget {
   const BecomeSellerScreen({super.key});
 
@@ -55,31 +57,18 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
     super.dispose();
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedDob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select your Date of Birth')));
-      return;
-    }
-    if (_selectedBank == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select your Bank')));
-      return;
-    }
-    if (!_agreedToTerms) return;
+  void _submitForm() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    setState(() => _isLoading = true);
-
-    // จำลองการโหลดส่งข้อมูล ->ค่อยมาต่อ API กับ Firebase
-    await Future.delayed(const Duration(seconds: 2));
-
-    setState(() => _isLoading = false);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Application submitted successfully!'), backgroundColor: AppTheme.success),
-      );
-      context.pop(); // กลับไปหน้าโปรไฟล์
-    }
+    // เด้งแจ้งเตือน Coming soon
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Coming soon! This feature is under development. '),
+        backgroundColor: AppTheme.accent, 
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _pickDob() async {

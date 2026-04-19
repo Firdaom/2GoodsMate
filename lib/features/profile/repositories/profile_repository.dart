@@ -27,7 +27,7 @@ class ProfileRepository {
             SetOptions(merge: true),
           );
     } catch (e) {
-      debugPrint('🔥 Error updating notification keywords: $e');
+      debugPrint(' Error updating notification keywords: $e');
       rethrow;
     }
   }
@@ -41,7 +41,7 @@ class ProfileRepository {
           .get();
       
       if (doc.exists) {
-        // ✅ ใช้ Safe Casting เพื่อกันแอปพังถ้าข้อมูลใน Firebase ไม่ใช่ List
+       
         final data = doc.data();
         if (data != null && data.containsKey(UserFields.notificationKeywords)) {
           return List<String>.from(data[UserFields.notificationKeywords] ?? []);
@@ -49,7 +49,7 @@ class ProfileRepository {
       }
       return [];
     } catch (e) {
-      debugPrint('🔥 Error fetching notification keywords: $e');
+      debugPrint(' Error fetching notification keywords: $e');
       rethrow;
     }
   }

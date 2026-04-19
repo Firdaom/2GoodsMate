@@ -1,6 +1,7 @@
 
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
+import 'package:anigoods/core/widgets/item_image.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:flutter/material.dart';
 

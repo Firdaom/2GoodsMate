@@ -56,7 +56,7 @@ class StorageService {
   /// Delete ALL item images (เมื่อผู้ใช้ลบโพสต์สินค้า)
   Future<void> deleteItemImages(String itemId) async {
     try {
-      // ✅ 5. อ้างอิงไปที่ "โฟลเดอร์" ของสินค้านั้นๆ
+      // 5. อ้างอิงไปที่ "โฟลเดอร์" ของสินค้านั้นๆ
       final folderRef = _storage.ref().child('${StoragePaths.itemImages}/$itemId');
       
       // ดึงรายชื่อไฟล์ทั้งหมดในโฟลเดอร์นี้

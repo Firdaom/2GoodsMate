@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:anigoods/core/repositories/item_repository.dart';
 import 'package:anigoods/features/add_item/screens/image_upload_picker.dart';
 
+
+// เขียนไว้พัฒนาต่อสำหรับใช้งานโพสต์สินค้า เมื่อยูเซอร์จะเปิดร้านเอง ปัจจุบันนี้อยุ่ในช่วงพัฒนา ยังไม่มีการดึงโค้ดหน้านี้ไปใช้
+
 const List<String> kCategories = ['Figures', 'Cards', 'Manga', 'Merchandise', 'Vinyl'];
 const List<String> kRarities = ['Limited', 'Rare', 'Common'];
 

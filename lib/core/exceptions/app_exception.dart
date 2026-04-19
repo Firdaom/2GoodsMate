@@ -1,5 +1,5 @@
-/// ════════════════════════════════════════════════════════
-/// APP EXCEPTION
+
+// APP EXCEPTION
 
 
 class AppException implements Exception {

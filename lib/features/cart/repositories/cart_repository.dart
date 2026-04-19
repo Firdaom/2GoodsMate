@@ -8,7 +8,7 @@ class CartRepository {
 
   CartRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
 
-  // 📥 ดึง ID สินค้าที่อยู่ในตะกร้าจาก User Collection
+  // ดึง ID สินค้าที่อยู่ในตะกร้าจาก User Collection
   Future<List<String>> getCartItemIds(String uid) async {
     final doc = await _firestore.collection(FirebaseCollections.users).doc(uid).get();
     if (doc.exists) {

@@ -33,7 +33,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           // Auto-redirect to home when email is verified
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
-            context.goNamed(RouteNames.home.name); // ใช้ Enum ที่ตั้งไว้ใน app_router.dart
+            context.goNamed(RouteNames.home.name); 
           }
         }
       }

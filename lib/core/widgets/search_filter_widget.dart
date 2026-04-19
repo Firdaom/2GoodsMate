@@ -1,10 +1,10 @@
+import 'package:anigoods/features/watchlist/providers/watchlist_filter_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart'; 
 import 'package:anigoods/features/home/providers/home_filter_provider.dart'; 
-import 'package:anigoods/features/watchlist/screens/watchlist_screen.dart'; 
 
 const List<String> kCategories = ['All', 'Figures', 'Cards', 'Manga', 'Merchandise', 'Vinyl'];
 const List<String> kRarities = ['All', 'Limited', 'Rare', 'Common'];

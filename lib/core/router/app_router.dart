@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:anigoods/models/item_model.dart';
-import 'package:anigoods/models/user_model.dart';
 import 'package:anigoods/features/auth/screens/login_screen.dart';
 import 'package:anigoods/features/auth/screens/register_screen.dart';
 import 'package:anigoods/features/auth/screens/verify_email_screen.dart';
@@ -20,7 +19,6 @@ import 'package:anigoods/features/landing/screens/landing_screen.dart';
 import 'package:anigoods/core/widgets/main_shell.dart';
 import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/profile/screens/setting_screen.dart';
-import 'package:anigoods/features/profile/screens/edit_profile_screen.dart';
 import 'package:anigoods/features/profile/screens/my_listing_screen.dart';
 import 'package:anigoods/features/order/screens/order_screen.dart';
 import 'package:anigoods/features/order/screens/order_status_screen.dart';
@@ -188,7 +186,6 @@ final appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final itemId = state.pathParameters['itemId']!;
-        // เราส่งแค่ ID มา แล้วให้หน้า Detail ไปโหลดข้อมูลผ่าน Provider โดยใช้ ID นี้
         return ItemDetailScreen(itemId: itemId);
       },
     ),
@@ -264,28 +261,42 @@ final appRouter = GoRouter(
       builder: (context, state) => const BecomeSellerScreen(),
     ),
 
-    // 👇 ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
-    ShellRoute(
-      navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => MainShell(child: child),
-      routes: [
-        GoRoute(
-          path: RouteNames.home.path,
-          name: RouteNames.home.name,
-          pageBuilder: (context, state) =>
-              NoTransitionPage(child: const HomeScreen()),
+    //  ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return MainShell(navigationShell: navigationShell);
+      },
+      branches: [
+        // แท็บที่ 0: Home
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.home.path,
+              name: RouteNames.home.name,
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: HomeScreen()),
+            ),
+          ],
         ),
-        GoRoute(
-          path: RouteNames.watchlist.path,
-          name: RouteNames.watchlist.name,
-          pageBuilder: (context, state) =>
-              NoTransitionPage(child: const WatchlistScreen()),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.watchlist.path,
+              name: RouteNames.watchlist.name,
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: WatchlistScreen()),
+            ),
+          ],
         ),
-        GoRoute(
-          path: RouteNames.profile.path,
-          name: RouteNames.profile.name,
-          pageBuilder: (context, state) =>
-              NoTransitionPage(child: const ProfileScreen()),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.profile.path,
+              name: RouteNames.profile.name,
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: ProfileScreen()),
+            ),
+          ],
         ),
       ],
     ),

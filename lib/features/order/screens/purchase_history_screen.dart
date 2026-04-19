@@ -32,7 +32,7 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 ย้าย FutureBuilder มาคลุมรอบนอกสุด
+    // ย้าย FutureBuilder มาคลุมรอบนอกสุด
     return FutureBuilder<List<QueryDocumentSnapshot>>(
       future: _fetchOrders(),
       builder: (context, snapshot) {
@@ -51,38 +51,6 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
         }
 
         final orders = snapshot.data ?? [];
-
-        // 💡 นับจำนวนออเดอร์ของแต่ละสถานะ
-        final toPayCount = orders
-            .where(
-              (doc) =>
-                  (doc.data() as Map<String, dynamic>)[OrderFields.status] ==
-                  OrderStatus.toPay.name,
-            )
-            .length;
-        final toShipCount = orders
-            .where(
-              (doc) =>
-                  (doc.data() as Map<String, dynamic>)[OrderFields.status] ==
-                  OrderStatus.toShip.name,
-            )
-            .length;
-        final toReceiveCount = orders.where((doc) {
-          final status =
-              (doc.data() as Map<String, dynamic>)[OrderFields.status];
-          return status == OrderStatus.toReceive.name || status == 'shipped';
-        }).length;
-        final toRateCount = orders
-            .where(
-              (doc) =>
-                  (doc.data() as Map<String, dynamic>)[OrderFields.status] ==
-                  OrderStatus.completed.name,
-            )
-            .length;
-
-        // ฟังก์ชันช่วยสร้างข้อความบนแท็บ (ถ้าไม่มีของ จะไม่โชว์เลข 0 ให้เกะกะ)
-        String tabText(String title, int count) =>
-            count > 0 ? '$title ($count)' : title;
 
         return DefaultTabController(
           length: 5,

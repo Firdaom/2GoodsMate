@@ -75,14 +75,13 @@ class TermsScreen extends StatelessWidget {
     );
   }
 
-  // 🛠️ Widget ช่วยสร้างหัวข้อใหญ่ (จะได้ไม่ต้องเขียนโค้ดซ้ำ)
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
       child: Text(
         title,
         style: const TextStyle(
-          color: AppTheme.accent, // ใช้สีฟ้า Accent ของแอป
+          color: AppTheme.accent, 
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
@@ -90,14 +89,13 @@ class TermsScreen extends StatelessWidget {
     );
   }
 
-  //  Widget ช่วยสร้างเนื้อหา (จะได้ไม่ต้องเขียนโค้ดซ้ำ)
   Widget _buildParagraph(String text) {
     return Text(
       text,
       style: const TextStyle(
-        color:AppTheme.textMuted, // ใช้สีเทาอ่อนให้อ่านสบายตา
+        color:AppTheme.textMuted,
         fontSize: 14,
-        height: 1.6, // ระยะห่างบรรทัดทำให้อ่านง่ายขึ้น
+        height: 1.6, 
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:anigoods/core/widgets/item_card.dart';
+import 'package:anigoods/features/watchlist/providers/watchlist_filter_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,12 +13,6 @@ import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/widgets/search_filter_widget.dart';
 import 'package:anigoods/features/watchlist/providers/watchlist_provider.dart';
 
-// ══════════════════════════════════════════════════════════
-//  PROVIDERS สำหรับหน้า Watchlist 
-// ══════════════════════════════════════════════════════════
-final watchlistSearchQueryProvider = StateProvider<String>((ref) => '');
-final watchlistCategoryProvider = StateProvider<String>((ref) => 'All');
-final watchlistRarityProvider = StateProvider<String>((ref) => 'All');
 
 // ══════════════════════════════════════════════════════════
 // 📺 2. WATCHLIST SCREEN
@@ -146,8 +141,9 @@ class WatchlistScreen extends ConsumerWidget {
                 key: ValueKey(items[i].id),
                 item: items[i],
                 isWatchlisted: isFav,
-                onTap: () => context.push(
-                  RouteNames.itemDetail.path,
+                onTap: () => context.pushNamed(
+                  RouteNames.itemDetail.name,
+                  pathParameters: {'itemId': items[i].id},
                   extra: {
                     'item': items[i],
                     'isWatchlisted': isFav,

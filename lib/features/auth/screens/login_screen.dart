@@ -43,7 +43,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     
     try {
-      // ✅ 1. เรียกใช้ผ่าน RepositoryProvider ที่เราแยก Feature ไว้แล้ว
       final authRepo = ref.read(authRepositoryProvider);
       
       await authRepo.signInWithEmail(
@@ -52,11 +51,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordCtrl.text,
       );
 
-      // ✅ 2. ตัวอย่างการดึงข้อมูลตะกร้า (ควรเรียกผ่าน provider)
-      // await ref.read(cartProvider.notifier).loadCart();
-
       if (mounted) {
-        context.goNamed('home');
+        context.goNamed(RouteNames.home.name);
       }
     } catch (e) {
       ErrorHandler.logError('login_screen._signIn()', e);

@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 
+
+// เขียนไว้พัฒนาต่อสำหรับใช้งานโพสต์สินค้า เมื่อยูเซอร์จะเปิดร้านเอง ปัจจุบันนี้อยุ่ในช่วงพัฒนา ยังไม่มีการดึงโค้ดหน้านี้ไปใช้
+
 class ImageUploadPicker extends StatelessWidget {
-  // ช่องเสียบสายไฟ
   final List<XFile> imageFiles;
   final VoidCallback onPickImage;
   final Function(int) onRemoveImage;
@@ -30,7 +32,6 @@ Widget _buildImagePreview(XFile imageFile) {
       },
     );
   } else {
-    // เพิ่ม errorBuilder เพื่อกันแอปพังถ้าไฟล์มีปัญหา
     return Image.file(
       File(imageFile.path), 
       fit: BoxFit.contain, 
@@ -42,11 +43,10 @@ Widget _buildImagePreview(XFile imageFile) {
 
   @override
   Widget build(BuildContext context) {
-    // ใช้ imageFiles (ไม่มีขีดล่าง) แทน _imageFiles
     if (imageFiles.isEmpty) {
       return Center(
         child: GestureDetector(
-          onTap: onPickImage, // ใช้ onPickImage แทน _pickImage
+          onTap: onPickImage, 
           child: Container(
             width: 120,
             height: 120,
@@ -93,13 +93,13 @@ Widget _buildImagePreview(XFile imageFile) {
             scrollDirection: Axis.horizontal,
             physics: const PageScrollPhysics(),
             pageSnapping: true,
-            itemCount: imageFiles.length + 1, // ไม่มีขีดล่าง
+            itemCount: imageFiles.length + 1, 
             itemBuilder: (context, index) {
-              if (index == imageFiles.length) { // ไม่มีขีดล่าง
+              if (index == imageFiles.length) { 
                 // Add More button
                 return Center(
                   child: GestureDetector(
-                    onTap: onPickImage, // ใช้ onPickImage
+                    onTap: onPickImage, 
                     child: Container(
                       width: 200,
                       decoration: BoxDecoration(
@@ -140,14 +140,14 @@ Widget _buildImagePreview(XFile imageFile) {
                   Container(
                     padding: const EdgeInsets.all(16),
                     alignment: Alignment.center,
-                    child: _buildImagePreview(imageFiles[index]), // ไม่มีขีดล่าง
+                    child: _buildImagePreview(imageFiles[index]), 
                   ),
                   // Delete button
                   Positioned(
                     top: 16,
                     right: 16,
                     child: GestureDetector(
-                      onTap: () => onRemoveImage(index), // ใช้ onRemoveImage
+                      onTap: () => onRemoveImage(index), 
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -175,13 +175,13 @@ Widget _buildImagePreview(XFile imageFile) {
         ),
 
         // Thumbnail list
-        if (imageFiles.isNotEmpty) ...[ // ไม่มีขีดล่าง
+        if (imageFiles.isNotEmpty) ...[ 
           const SizedBox(height: 12),
           SizedBox(
             height: 80,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: imageFiles.length, // ไม่มีขีดล่าง
+              itemCount: imageFiles.length, 
               itemBuilder: (context, index) {
                 return Container(
                   width: 80,
@@ -191,7 +191,7 @@ Widget _buildImagePreview(XFile imageFile) {
                     child: Container(
                       color: AppTheme.accentLight,
                       alignment: Alignment.center,
-                      child: _buildImagePreview(imageFiles[index]), // ไม่มีขีดล่าง
+                      child: _buildImagePreview(imageFiles[index]), 
                     ),
                   ),
                 );

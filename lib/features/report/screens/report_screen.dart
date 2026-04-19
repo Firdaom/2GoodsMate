@@ -6,7 +6,6 @@ import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/models/report_model.dart';
 import 'package:anigoods/core/services/moderation_service.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
-import 'package:anigoods/core/constants/app_constants.dart';
 
 class ReportItemScreen extends StatefulWidget {
   final ItemModel item;
