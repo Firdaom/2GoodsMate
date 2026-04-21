@@ -1,81 +1,52 @@
-import 'package:anigoods/core/widgets/item_card.dart';
-import 'package:anigoods/features/watchlist/providers/watchlist_filter_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
+import 'package:anigoods/core/widgets/item_card.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/widgets/search_filter_widget.dart';
 import 'package:anigoods/features/watchlist/providers/watchlist_provider.dart';
 
-
-// ══════════════════════════════════════════════════════════
-// 📺 2. WATCHLIST SCREEN
-// ══════════════════════════════════════════════════════════
 class WatchlistScreen extends ConsumerWidget {
   const WatchlistScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
-    final query = ref.watch(watchlistSearchQueryProvider);
-    final category = ref.watch(watchlistCategoryProvider);
-    final rarity = ref.watch(watchlistRarityProvider);
-
-    final watchlist = ref.watch(watchlistProvider).toList();
-
     final uid = FirebaseAuth.instance.currentUser?.uid;
-
     if (uid == null) {
       return const Scaffold(body: Center(child: Text('Please login')));
     }
+
+    // เช็คว่ามีรายการในใจไหม
+    final watchlistIds = ref.watch(watchlistProvider);
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             _buildHeader(context),
-            
             const SearchAndFilterWidget(isWatchlist: true),
-            
             const SizedBox(height: 16),
 
             Expanded(
-              child: watchlist.isEmpty
+              child: watchlistIds.isEmpty
                   ? const EmptyState(
                       icon: Icons.favorite_outline,
                       title: 'No items yet',
                       subtitle: 'Tap the heart on items\nto save them here',
                     )
-                  : StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection(FirebaseCollections.items)
-                          .where(FieldPath.documentId, whereIn: watchlist)
-                          .snapshots(),
-                      builder: (context, itemsSnapshot) {
-                        if (itemsSnapshot.connectionState == ConnectionState.waiting && !itemsSnapshot.hasData) {
-                          return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
-                        }
-
-                        var items = itemsSnapshot.data?.docs
-                                .map((d) => ItemModel.fromFirestore(d))
-                                .toList() ?? [];
-
-                        items = items.where((item) {
-                          final q = query.toLowerCase();
-                          final matchQ = q.isEmpty || 
-                                         item.title.toLowerCase().contains(q) || 
-                                         item.series.toLowerCase().contains(q);
-                          final matchCat = category == 'All' || item.category == category;
-                          final matchRar = rarity == 'All' || item.rarity == rarity;
-                          return matchQ && matchCat && matchRar;
-                        }).toList();
-
+              
+                  : ref.watch(watchlistItemsProvider).when(
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(color: AppTheme.accent),
+                      ),
+                      error: (err, stack) => Center(
+                        child: Text('Error: $err', style: const TextStyle(color: AppTheme.danger)),
+                      ),
+                      data: (items) {
                         if (items.isEmpty) {
                           return const Center(
                             child: Text(
@@ -84,7 +55,6 @@ class WatchlistScreen extends ConsumerWidget {
                             ),
                           );
                         }
-
                         return _renderItems(context, ref, items);
                       },
                     ),
@@ -95,28 +65,30 @@ class WatchlistScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 10, 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Watchlist',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-            ),
-            Row(
-              children: [
-                const CartIconButton(),
-                const SizedBox(width: 4),
-                IconButton(
-                  onPressed: () => context.push(RouteNames.notifications.path),
-                  icon: const Icon(Icons.notifications_active, color: AppTheme.textPrimary, size: 24),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 10, 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Watchlist',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+          ),
+          Row(
+            children: [
+              const CartIconButton(),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => context.pushNamed(RouteNames.notifications.name),
+                icon: const Icon(Icons.notifications_none_outlined, color: AppTheme.textPrimary, size: 24),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _renderItems(BuildContext context, WidgetRef ref, List<ItemModel> items) {
     return Column(
@@ -135,22 +107,18 @@ class WatchlistScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             itemCount: items.length,
             itemBuilder: (_, i) {
-              final isFav = ref.watch(watchlistProvider).contains(items[i].id);
+              final item = items[i];
+              final isFav = ref.watch(watchlistProvider).contains(item.id);
 
               return ItemCard(
-                key: ValueKey(items[i].id),
-                item: items[i],
+                key: ValueKey(item.id),
+                item: item,
                 isWatchlisted: isFav,
                 onTap: () => context.pushNamed(
                   RouteNames.itemDetail.name,
-                  pathParameters: {'itemId': items[i].id},
-                  extra: {
-                    'item': items[i],
-                    'isWatchlisted': isFav,
-                    'onWatchlistToggle': () => ref.read(watchlistProvider.notifier).toggle(items[i].id),
-                  },
+                  pathParameters: {'itemId': item.id},
                 ),
-                onWatchlistToggle: () => ref.read(watchlistProvider.notifier).toggle(items[i].id),
+                onWatchlistToggle: () => ref.read(watchlistProvider.notifier).toggle(item.id),
               );
             },
           ),

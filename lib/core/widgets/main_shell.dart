@@ -1,22 +1,17 @@
+import 'package:anigoods/features/home/providers/home_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 
-class MainShell extends StatelessWidget {
+// 1. เปลี่ยนจาก StatelessWidget เป็น ConsumerWidget
+class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainShell({super.key, required this.navigationShell});
 
-
-  void _onDestinationSelected(int index) {
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Container(
@@ -35,7 +30,19 @@ class MainShell extends StatelessWidget {
           child: NavigationBar(
             height: 60,
             selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: _onDestinationSelected,
+            onDestinationSelected: (index) {
+              if (index == navigationShell.currentIndex) {
+                if (index == 0) {
+                  ref.read(homeScrollTriggerProvider.notifier).state++;
+                }
+              } else {
+
+                navigationShell.goBranch(
+                  index,
+                  initialLocation: index == navigationShell.currentIndex,
+                );
+              }
+            },
             backgroundColor: Colors.transparent,
             indicatorColor: AppTheme.accentLight,
             elevation: 0,

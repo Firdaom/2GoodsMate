@@ -1,15 +1,23 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:anigoods/core/constants/firebase_constants.dart';
+import 'package:anigoods/features/cart/providers/cart_provider.dart';
+import 'package:anigoods/features/watchlist/providers/watchlist_filter_provider.dart';
+import 'package:anigoods/features/watchlist/repositories/watchlist_repository.dart';
+import 'package:anigoods/models/item_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 final watchlistProvider = StateNotifierProvider<WatchlistNotifier, Set<String>>((ref) {
-  return WatchlistNotifier();
+  ref.watch(authStateProvider);
+  
+  final repo = ref.read(watchlistRepositoryProvider);
+  return WatchlistNotifier(repo);
 });
 
 class WatchlistNotifier extends StateNotifier<Set<String>> {
-  WatchlistNotifier() : super({}) {
+  final WatchlistRepository _repository;
 
+  WatchlistNotifier(this._repository) : super({}) {
     _loadInitialWatchlist();
   }
 
@@ -18,11 +26,8 @@ class WatchlistNotifier extends StateNotifier<Set<String>> {
     if (uid == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance.collection(FirebaseCollections.users).doc(uid).get();
-      if (doc.exists && doc.data() != null) {
-        final List<dynamic> savedWatchlist = doc.data()?[UserFields.watchlist] ?? [];
-        state = Set<String>.from(savedWatchlist);
-      }
+      final savedWatchlist = await _repository.getWatchlist(uid);
+      state = Set<String>.from(savedWatchlist);
     } catch (e) {
       print("Error loading watchlist: $e");
     }
@@ -34,7 +39,6 @@ class WatchlistNotifier extends StateNotifier<Set<String>> {
 
     final isSaved = state.contains(itemId);
 
-
     if (isSaved) {
       state = {...state}..remove(itemId);
     } else {
@@ -42,19 +46,14 @@ class WatchlistNotifier extends StateNotifier<Set<String>> {
     }
 
     try {
-      final userRef = FirebaseFirestore.instance.collection(FirebaseCollections.users).doc(uid);
-      if (isSaved) {
-        await userRef.update({
-          UserFields.watchlist: FieldValue.arrayRemove([itemId])
-        });
-      } else {
-        await userRef.update({
-          UserFields.watchlist: FieldValue.arrayUnion([itemId])
-        });
-      }
+      await _repository.toggleWatchlist(
+        uid: uid, 
+        itemId: itemId, 
+        isCurrentlySaved: isSaved,
+      );
     } catch (e) {
       print("Error updating Firestore: $e");
-      
+      //  ถ้ามี Error Revert กลับ
       if (isSaved) {
         state = {...state}..add(itemId);
       } else {
@@ -63,3 +62,42 @@ class WatchlistNotifier extends StateNotifier<Set<String>> {
     }
   }
 }
+
+
+final watchlistItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((ref) async {
+
+  final watchlistIds = ref.watch(watchlistProvider).toList();
+
+  if (watchlistIds.isEmpty) {
+    return [];
+  }
+
+  final queryStr = ref.watch(watchlistSearchQueryProvider).toLowerCase();
+  final category = ref.watch(watchlistCategoryProvider);
+  final rarity = ref.watch(watchlistRarityProvider);
+
+
+  final itemSnapshots = await Future.wait(
+    watchlistIds.map((id) => FirebaseFirestore.instance
+        .collection(FirebaseCollections.items)
+        .doc(id)
+        .get())
+  );
+
+  // แปลง Document เป็น ItemModel 
+  var items = itemSnapshots
+      .where((doc) => doc.exists && doc.data() != null)
+      .map((doc) => ItemModel.fromFirestore(doc))
+      .toList();
+
+  // Client-Side Filtering 
+  return items.where((item) {
+    final matchQuery = queryStr.isEmpty || 
+                       item.title.toLowerCase().contains(queryStr) || 
+                       item.series.toLowerCase().contains(queryStr);
+    final matchCat = category == 'All' || item.category == category;
+    final matchRar = rarity == 'All' || item.rarity == rarity;
+    
+    return matchQuery && matchCat && matchRar;
+  }).toList();
+});

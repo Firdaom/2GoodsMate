@@ -60,7 +60,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const CartIconButton(),
                       const SizedBox(width: 4),
                       IconButton(
-                        onPressed: () => context.push(RouteNames.chat.path, extra: 'Chat List'),
+                        onPressed: () => context.pushNamed(RouteNames.chatlist.name, extra: 'Chat List'),
                         icon: Stack(
                           clipBehavior: Clip.none,
                           children: [
@@ -176,7 +176,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _load();
                 },
               ),
-              SettingsRow(icon: Icons.inventory_2_outlined, label: 'My Listings', onTap: () => context.push(RouteNames.myListings.path)),
               SettingsRow(icon: Icons.storefront_outlined, label: 'Switch Role', onTap: () => context.push(RouteNames.becomeSeller.path)),
               SettingsRow(icon: Icons.settings_outlined, label: 'Settings', onTap: () => context.push(RouteNames.settings.path)),
             ],

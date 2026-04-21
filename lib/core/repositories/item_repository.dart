@@ -9,6 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:anigoods/core/services/moderation_service.dart';
 
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
+
 final itemRepositoryProvider = Provider((ref) {
   return ItemRepository();
 });
@@ -129,3 +133,5 @@ class ItemRepository {
     return ItemModel.fromFirestore(doc);
   }
 }
+
+

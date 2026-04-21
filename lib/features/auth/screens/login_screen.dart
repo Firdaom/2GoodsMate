@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/error_handler.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/features/auth/services/auth_service.dart';
 import 'package:anigoods/features/auth/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -19,7 +18,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _authService = AuthService();
   
   bool _loading = false;
   bool _obscure = true;
@@ -50,10 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-
-      if (mounted) {
-        context.goNamed(RouteNames.home.name);
-      }
+      
     } catch (e) {
       ErrorHandler.logError('login_screen._signIn()', e);
       setState(() => _error = ErrorHandler.getUserMessage(e));

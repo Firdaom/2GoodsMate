@@ -25,21 +25,18 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _controller.forward();
 
     // Navigate based on auth status after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        final isLoggedIn = FirebaseAuth.instance.currentUser != null;
-        if (isLoggedIn) {
-          context.go(RouteNames.home.path);
-        } else {
-          context.go(RouteNames.landing.path);
-        }
+
+        context.go(RouteNames.home.path);
       }
     });
   }
@@ -53,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  AppTheme.surface, 
+      backgroundColor: AppTheme.surface,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,

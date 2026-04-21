@@ -15,14 +15,23 @@ class OrderService {
 
   Future<String> createOrder(OrderModel order) async {
     try {
-      DocumentReference docRef = await _firestore
-          .collection(FirebaseCollections.orders)
-          .add(order.toFirestore());
+    
+      final batch = _firestore.batch();
 
-      // 2. คืนค่า ID กลับไป
-      return docRef.id;
+    
+      final orderRef = _firestore.collection(FirebaseCollections.orders).doc();
+      batch.set(orderRef, order.toFirestore());
+
+     
+      final itemRef = _firestore.collection(FirebaseCollections.items).doc(order.itemId);
+      batch.update(itemRef, {'isAvailable': false});
+
+      await batch.commit();
+
+     
+      return orderRef.id;
+
     } on FirebaseException catch (e) {
-      // 3. จัดการ Error แบบมือโปร
       throw AppException(
         message: e.message ?? 'Failed to place order. Please try again.',
         code: e.code,

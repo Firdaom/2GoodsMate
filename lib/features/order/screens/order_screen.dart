@@ -1,5 +1,9 @@
+import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:anigoods/core/widgets/item_image.dart';
 import 'package:anigoods/features/cart/providers/cart_provider.dart';
+import 'package:anigoods/features/order/screens/address_card.dart';
+import 'package:anigoods/features/watchlist/providers/watchlist_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +14,8 @@ import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/models/order_model.dart';
 import 'package:anigoods/features/order/services/order_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anigoods/features/home/providers/home_provider.dart';
+import 'package:anigoods/features/item_detail/providers/item_detail_provider.dart';
 
 class OrderScreen extends ConsumerStatefulWidget {
   final List<ItemModel> items;
@@ -22,90 +28,21 @@ class OrderScreen extends ConsumerStatefulWidget {
 }
 
 class _OrderScreenState extends ConsumerState<OrderScreen> {
-  Map<String, dynamic> _currentAddress = {
+  // 🌟 เก็บที่อยู่ไว้แค่ตัวแปรเดียว เพื่อเอาไว้ส่งเข้า Firebase ตอนกดสั่งซื้อ
+  Map<String, dynamic> _finalAddress = {
     'name': '',
     'phone': '',
     'detail': '',
   };
 
   bool get _hasAddress => 
-      _currentAddress['name'].isNotEmpty && 
-      _currentAddress['phone'].isNotEmpty && 
-      _currentAddress['detail'].isNotEmpty;
+      _finalAddress['name'].isNotEmpty && 
+      _finalAddress['phone'].isNotEmpty && 
+      _finalAddress['detail'].isNotEmpty;
 
   String _formatPrice(double price) => price
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-
-  // ฟังก์ชันแสดงหน้าต่างแก้ไขที่อยู่
-  void _showEditAddressDialog() {
-    final nameCtrl = TextEditingController(text: _currentAddress['name']);
-    final phoneCtrl = TextEditingController(text: _currentAddress['phone']);
-    final detailCtrl = TextEditingController(text: _currentAddress['detail']);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Edit Delivery Address', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDialogTextField('Full Name', nameCtrl),
-              const SizedBox(height: 12),
-              _buildDialogTextField('Phone Number', phoneCtrl, keyboardType: TextInputType.phone),
-              const SizedBox(height: 12),
-              _buildDialogTextField('Full Address', detailCtrl, maxLines: 3),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accent,
-              foregroundColor: AppTheme.background,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              setState(() {
-                _currentAddress = {
-                  'name': nameCtrl.text.trim(),
-                  'phone': phoneCtrl.text.trim(),
-                  'detail': detailCtrl.text.trim(),
-                };
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Save Address', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _buildDialogTextField(String label, TextEditingController controller, {int maxLines = 1, TextInputType? keyboardType}) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-        filled: true,
-        fillColor: AppTheme.background,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,10 +52,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Checkout',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
+        title: const Text('Checkout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -126,17 +60,15 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionLabel('SHIPPING ADDRESS'),
-            const SizedBox(height: 8),
-            _buildInfoCard(
-              icon: Icons.location_on_outlined,
-             title: _hasAddress ? '${_currentAddress['name']} (${_currentAddress['phone']})' : 'No Shipping Address',
-              subtitle: _hasAddress ? _currentAddress['detail'] : 'Tap here to add your delivery address',
-              actionIcon: Icons.edit_outlined,
-              onTap: _showEditAddressDialog,
+            AddressManagerCard(
+              onAddressUpdated: (newAddress) {
+                setState(() {
+                  _finalAddress = newAddress;
+                });
+              },
             ),
+            
             const SizedBox(height: 24),
-
             const SectionLabel('ITEM SUMMARY'),
             const SizedBox(height: 8),
             _buildItemSummaryList(),
@@ -157,12 +89,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(
-        context,
-        ref,
-        totalPrice,
-        _currentAddress, 
-      ),
+      bottomNavigationBar: _buildBottomBar(context, ref, totalPrice, _finalAddress),
     );
   }
 
@@ -187,10 +114,9 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
             onTap: () async {
               
               if (!_hasAddress) {
-                _showEditAddressDialog();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please add a shipping address first.'),
+                    content: Text('Please tap on "Shipping Address" to add your details first.'),
                     backgroundColor: AppTheme.danger,
                   ),
                 );
@@ -219,16 +145,27 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                     createdAt: DateTime.now(),
                   );
                   await orderService.createOrder(newOrder);
+
+                  ref.invalidate(itemDetailProvider(item.id));
                 }
 
                 if (context.mounted) {
                   Navigator.pop(context); 
                   _showSuccessDialog(context); 
 
+                  for (var item in widget.items) {
+                    ref.read(cartProvider.notifier).removeFromCart(item.id); 
+                  }
+
                   // ล้างตะกร้า
                   if (widget.isFromCart) {
                     ref.read(cartProvider.notifier).clearCart();
                   }
+
+                  ref.invalidate(homeItemsProvider);
+
+                  ref.invalidate(watchlistItemsProvider);
+
                 }
               } catch (e) {
                 if (context.mounted) Navigator.pop(context);

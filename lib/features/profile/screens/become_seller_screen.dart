@@ -1,3 +1,4 @@
+import 'package:anigoods/core/utils/snackbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
@@ -58,20 +59,14 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
   }
 
   void _submitForm() {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    // เด้งแจ้งเตือน Coming soon
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coming soon! This feature is under development. '),
-        backgroundColor: AppTheme.accent, 
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    SnackBarHelper.showInfo(
+    context, 
+    'Coming soon! This feature is under development.',
+    backgroundColor: AppTheme.accent,
+  );
   }
 
-  Future<void> _pickDob() async {
+ Future<void> _pickDob() async {
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -79,16 +74,25 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.accent,
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light( 
+              primary: AppTheme.accent, 
+              onPrimary: Colors.white, 
               surface: AppTheme.surface,
+              onSurface: AppTheme.textPrimary, 
+            ),
+            // ปรับสีปุ่ม OK / CANCEL ด้านล่าง
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.accent, 
+              ),
             ),
           ),
           child: child!,
         );
       },
     );
+    
     if (date != null) {
       setState(() => _selectedDob = date);
     }

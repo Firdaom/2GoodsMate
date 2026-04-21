@@ -4,13 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:anigoods/features/cart/repositories/cart_repository.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async'; 
 
-// 1. สร้าง Provider เพื่อดึงสถานะการ Login แบบ Real-time
+
 final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-// 2. ปรับปรุง cartProvider ให้ "เฝ้าดู" (watch) authStateProvider
+// (watch) authStateProvider
 final cartProvider = StateNotifierProvider.autoDispose<CartNotifier, List<ItemModel>>((ref) {
   final repo = CartRepository(firestore: FirebaseFirestore.instance);
   
@@ -26,8 +27,9 @@ class CartNotifier extends StateNotifier<List<ItemModel>> {
   final String? _uid;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  // 🔥 เพิ่มตัวแปรเช็กสถานะ
+  
   bool _isLoading = true;
+  StreamSubscription? _itemsSubscription;
 
   CartNotifier(this._repository, this._uid) : super([]) {
     if (_uid != null) {
@@ -35,6 +37,12 @@ class CartNotifier extends StateNotifier<List<ItemModel>> {
     } else {
       _isLoading = false; 
     }
+  }
+
+  @override
+  void dispose() {
+    _itemsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> loadCart() async {
@@ -47,19 +55,37 @@ class CartNotifier extends StateNotifier<List<ItemModel>> {
       
       if (itemIds.isEmpty) {
         state = [];
+        _isLoading = false;
       } else {
         final limitedIds = itemIds.take(30).toList();
-        final itemsSnapshot = await _firestore
+        
+        _itemsSubscription?.cancel(); 
+        _itemsSubscription = _firestore
             .collection(FirebaseCollections.items)
             .where(FieldPath.documentId, whereIn: limitedIds)
-            .get();
+            .snapshots()
+            .listen((snapshot) {
+          
+          // แปลงข้อมูลที่ได้มาเป็น ItemModel
+          final latestItems = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+          
+          // (isAvailable == true)
+          final availableItems = latestItems.where((item) => item.isAvailable).toList();
+          
+          
+          state = availableItems;
+          
+         
+          if (latestItems.length != availableItems.length) {
+            _syncToFirebase();
+          }
 
-        state = itemsSnapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+          _isLoading = false;
+        });
       }
     } catch (e) {
       state = [];
-    } finally {
-      _isLoading = false; 
+      _isLoading = false;
     }
   }
 

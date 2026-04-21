@@ -1,5 +1,9 @@
+import 'package:anigoods/core/utils/snackbar_helper.dart';
+import 'package:anigoods/features/cart/providers/cart_provider.dart';
+import 'package:anigoods/features/home/providers/home_provider.dart';
+import 'package:anigoods/features/watchlist/providers/watchlist_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anigoods/core/theme/app_theme.dart';
@@ -9,7 +13,6 @@ import 'package:anigoods/core/router/app_router.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  // 1. ฟังก์ชันเปลี่ยนรหัสผ่าน
   Future<void> _resetPassword(BuildContext context) async {
     final email = FirebaseAuth.instance.currentUser?.email;
     if (email == null) return;
@@ -17,20 +20,17 @@ class SettingsScreen extends ConsumerWidget {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset link sent to your email!'),
-            backgroundColor: AppTheme.accent,
-          ),
+        SnackBarHelper.showSuccess(
+          context,
+          'Password reset link sent to your email!',
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.danger,
-          ),
+        SnackBarHelper.showError(
+          context,
+          e,
+          contextLabel: 'settings.resetPassword',
         );
       }
     }
@@ -97,8 +97,12 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-
               await FirebaseAuth.instance.signOut();
+
+              ref.invalidate(watchlistProvider);
+              ref.invalidate(homeItemsProvider);
+              ref.invalidate(cartProvider);
+
               if (context.mounted) context.go(RouteNames.login.path);
             },
             style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
@@ -109,59 +113,60 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  // 4. ลบบัญชีแบบต่อจริงกับ Firebase
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account', style: TextStyle(color: AppTheme.danger)),
-        content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(color: AppTheme.danger),
+        ),
+        content: const Text(
+          'Are you sure you want to delete your account? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
             onPressed: () async {
-              Navigator.pop(context); // ปิด Dialog ก่อนทำงาน
-              
+              Navigator.pop(context);
+
               try {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
-                  await user.delete(); 
-                  
+                  ref.invalidate(watchlistProvider);
+                  ref.invalidate(homeItemsProvider);
+
+                  await user.delete();
+
                   if (context.mounted) {
-                    context.go(RouteNames.login.path); // เตะกลับหน้า Login
+                    SnackBarHelper.showSuccess(
+                      context,
+                      'Your account has been deleted.',
+                    );
+                    context.go(RouteNames.login.path);
                   }
                 }
               } on FirebaseAuthException catch (e) {
-                // ดัก Error กรณีเซสชันหมดอายุ (ต้องล็อกอินใหม่ก่อนลบ)
-                if (e.code == 'requires-recent-login') {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please log out and log in again before deleting your account.'),
-                        backgroundColor: AppTheme.danger,
-                      ),
+                if (context.mounted) {
+                  if (e.code == 'requires-recent-login') {
+                    SnackBarHelper.showInfo(
+                      context,
+                      'Please log out and log in again before deleting your account.',
+                      backgroundColor: AppTheme.danger,
                     );
-                  }
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: ${e.message}'),
-                        backgroundColor: AppTheme.danger,
-                      ),
+                  } else {
+                    SnackBarHelper.showError(
+                      context,
+                      e,
+                      contextLabel: 'settings.deleteAccount',
                     );
                   }
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: AppTheme.danger,
-                    ),
+                  SnackBarHelper.showError(
+                    context,
+                    e,
+                    contextLabel: 'settings.deleteAccount',
                   );
                 }
               }
@@ -203,7 +208,14 @@ class SettingsScreen extends ConsumerWidget {
             SettingsRow(
               icon: Icons.privacy_tip_outlined,
               label: 'Privacy Settings',
-              onTap: () {},
+              onTap: () {
+                SnackBarHelper.showInfo(
+                  context,
+                  'Coming soon! This feature is under development.',
+                  backgroundColor:
+                      AppTheme.accent, 
+                );
+              },
             ),
 
             const SizedBox(height: 16),
@@ -212,7 +224,14 @@ class SettingsScreen extends ConsumerWidget {
             SettingsRow(
               icon: Icons.dark_mode_outlined,
               label: 'Dark Mode',
-              onTap: () {},
+              onTap: () {
+                SnackBarHelper.showInfo(
+                  context,
+                  'Coming soon! This feature is under development.',
+                  backgroundColor:
+                      AppTheme.accent, 
+                );
+              },
             ),
             SettingsRow(
               icon: Icons.language,
@@ -230,7 +249,10 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.delete_outline,
               label: 'Delete Account',
               danger: true,
-              onTap: () => _showDeleteAccountDialog(context, ref), // เปลี่ยนให้เรียกใช้ฟังก์ชันจริง
+              onTap: () => _showDeleteAccountDialog(
+                context,
+                ref,
+              ), 
             ),
           ],
         ),

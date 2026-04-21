@@ -156,8 +156,8 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                   width: double.infinity,
                   child: PrimaryButton(
                     label: 'Contact Seller',
-                    onTap: () => context.push(
-                      RouteNames.chat.path,
+                    onTap: () => context.pushNamed(
+                      RouteNames.chatroom.name,
                       extra: _item?.sellerName,
                     ),
                   ),

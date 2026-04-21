@@ -1,17 +1,27 @@
 import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:anigoods/core/exceptions/app_exception.dart';
+import 'package:anigoods/models/item_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
-final homeRepositoryProvider = Provider((ref) => HomeRepository(
-  firestore: FirebaseFirestore.instance,
-));
 
 class HomeRepository {
   final FirebaseFirestore _firestore;
 
   HomeRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+
+  Stream<List<ItemModel>> getItemsStream(String category, String rarity) {
+    Query query = _firestore.collection('items')
+                           .where('isAvailable', isEqualTo: true);
+    
+    if (category != 'All') query = query.where('category', isEqualTo: category);
+    if (rarity != 'All') query = query.where('rarity', isEqualTo: rarity);
+    
+    query = query.orderBy('postedAt', descending: true);
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+    });
+  }
 
   /// ดึงรายการ Watchlist ของ User
   Future<List<String>> getWatchlist(String uid) async {

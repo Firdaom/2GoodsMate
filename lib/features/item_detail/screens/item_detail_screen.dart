@@ -1,3 +1,4 @@
+import 'package:anigoods/core/utils/snackbar_helper.dart';
 import 'package:anigoods/core/widgets/item_image.dart';
 import 'package:anigoods/features/cart/providers/cart_provider.dart';
 import 'package:flutter/material.dart';
@@ -22,10 +23,10 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    // 1. ดึงข้อมูลสินค้าจาก ID ผ่าน Provider
+    // 1. ดึงข้อมูลสินค้าจาก ID
     final itemAsync = ref.watch(itemDetailProvider(widget.itemId));
+
     
-    // 2. เช็คสถานะการถูกใจจาก WatchlistProvider ส่วนกลาง
     final isFavorite = ref.watch(watchlistProvider).contains(widget.itemId);
 
     return itemAsync.when(
@@ -33,7 +34,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         body: Center(child: CircularProgressIndicator(color: AppTheme.accent)),
       ),
       error: (err, stack) => Scaffold(
-        body: Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        body: Center(
+          child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+        ),
       ),
       data: (item) {
         if (item == null) {
@@ -76,7 +79,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8),
             ],
           ),
-          child: const Icon(Icons.arrow_back, color: AppTheme.textPrimary, size: 20),
+          child: const Icon(
+            Icons.arrow_back,
+            color: AppTheme.textPrimary,
+            size: 20,
+          ),
         ),
       ),
       actions: [
@@ -118,7 +125,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               ],
             ),
             padding: const EdgeInsets.all(8),
-            child: const Icon(Icons.flag_outlined, color: AppTheme.textMuted, size: 20),
+            child: const Icon(
+              Icons.flag_outlined,
+              color: AppTheme.textMuted,
+              size: 20,
+            ),
           ),
         ),
       ],
@@ -156,7 +167,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(20),
@@ -212,7 +226,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         Row(
                           children: [
                             Container(
-                              width: 7, height: 7,
+                              width: 7,
+                              height: 7,
                               decoration: BoxDecoration(
                                 color: _conditionColor(item.condition),
                                 shape: BoxShape.circle,
@@ -253,22 +268,31 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: item.tags.map((tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentLight,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
-                ),
-                child: Text(
-                  '#$tag',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppTheme.accent,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )).toList(),
+              children: item.tags
+                  .map(
+                    (tag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentLight,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.accent.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -276,7 +300,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     );
   }
 
-Widget _buildBottomBar(BuildContext context, ItemModel item) {
+  Widget _buildBottomBar(BuildContext context, ItemModel item) {
+    final bool isAvailable = item.isAvailable;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: const BoxDecoration(
@@ -286,126 +312,88 @@ Widget _buildBottomBar(BuildContext context, ItemModel item) {
       child: SafeArea(
         child: Row(
           children: [
-            // 💬 ปุ่ม Chat (ใหม่!)
+            // 💬 ปุ่ม Chat
             SizedBox(
               height: 52,
-              width: 52, 
+              width: 52,
               child: OutlinedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  
-                  context.push(RouteNames.chat.path, extra: item.sellerName);
+
+                  context.pushNamed(
+                    RouteNames.chatroom.name,
+                    extra: item.sellerName,
+                  );
                 },
                 style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.zero, // ลบ padding เดิมออก
-                  side: const BorderSide(color: AppTheme.accentLight), 
+                  padding: EdgeInsets.zero,
+                  side: const BorderSide(color: AppTheme.accentLight),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Icon(
                   Icons.sms_outlined,
-                  color: AppTheme.textPrimary, 
+                  color: AppTheme.textPrimary,
                   size: 22,
                 ),
               ),
             ),
             const SizedBox(width: 10),
 
-            // 🛒 ปุ่ม Add to Cart 
+            // 🛒 ปุ่ม Add to Cart
             SizedBox(
               height: 52,
-              width: 52, // บังคับให้เป็นจัตุรัส
+              width: 52,
               child: OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).clearSnackBars();
-                  ref.read(cartProvider.notifier).addItem(item); 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: AppTheme.textPrimary, 
-                      elevation: 6,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16), 
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                      margin: const EdgeInsets.only(bottom: 90, left: 20, right: 20),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      duration: const Duration(milliseconds: 1500),
-                      content: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: Colors.white24,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.shopping_bag_outlined,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'Added to Cart',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  item.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                onPressed: !isAvailable
+                    ? null
+                    : () {
+                        ref.read(cartProvider.notifier).addItem(item);
+
+                        SnackBarHelper.showAddToCartSuccess(
+                          context,
+                          item.title,
+                        );
+                      },
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.zero,
-                  side: const BorderSide(color: AppTheme.accentLight), // อันนี้สีฟ้า
+                  side: BorderSide(
+                    color: isAvailable ? AppTheme.accentLight : AppTheme.border,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.add_shopping_cart,
-                  color: AppTheme.accent, // สีฟ้า
+                  color: isAvailable ? AppTheme.accent : AppTheme.textMuted,
                   size: 22,
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            
+
             // ปุ่ม Order Now
             Expanded(
               child: SizedBox(
                 height: 52,
                 child: PrimaryButton(
-                  label: 'Order Now',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    context.push(RouteNames.order.path, extra: {
-                      'items': [item],
-                      'isFromCart': false,
-                    });
-                  },
+                  
+                  label: isAvailable ? 'Order Now' : 'Sold Out',
+                 
+                  onTap: !isAvailable
+                      ? null
+                      : () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          context.push(
+                            RouteNames.order.path,
+                            extra: {
+                              'items': [item],
+                              'isFromCart': false,
+                            },
+                          );
+                        },
                 ),
               ),
             ),
@@ -416,8 +404,9 @@ Widget _buildBottomBar(BuildContext context, ItemModel item) {
   }
 
   // Helper Functions
-  String _fmt(double price) => price.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _fmt(double price) => price
+      .toStringAsFixed(0)
+      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
@@ -429,10 +418,14 @@ Widget _buildBottomBar(BuildContext context, ItemModel item) {
 
   Color _conditionColor(String condition) {
     switch (condition) {
-      case 'New': return Colors.green;
-      case 'Like New': return Colors.blue;
-      case 'Good': return Colors.orange;
-      default: return Colors.grey;
+      case 'New':
+        return Colors.green;
+      case 'Like New':
+        return Colors.blue;
+      case 'Good':
+        return Colors.orange;
+      default:
+        return Colors.grey;
     }
   }
 }
@@ -442,7 +435,11 @@ class _InfoCard extends StatelessWidget {
   final String label;
   final Widget child;
   final bool accent;
-  const _InfoCard({required this.label, required this.child, this.accent = false});
+  const _InfoCard({
+    required this.label,
+    required this.child,
+    this.accent = false,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
@@ -450,12 +447,22 @@ class _InfoCard extends StatelessWidget {
     decoration: BoxDecoration(
       color: accent ? AppTheme.accentLight : AppTheme.surface,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: accent ? AppTheme.accent.withOpacity(0.2) : AppTheme.border),
+      border: Border.all(
+        color: accent ? AppTheme.accent.withOpacity(0.2) : AppTheme.border,
+      ),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600, letterSpacing: 0.6)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: AppTheme.textMuted,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+          ),
+        ),
         const SizedBox(height: 6),
         child,
       ],
@@ -467,5 +474,13 @@ class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
   @override
-  Widget build(BuildContext context) => Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textMuted, letterSpacing: 0.8));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: AppTheme.textMuted,
+      letterSpacing: 0.8,
+    ),
+  );
 }

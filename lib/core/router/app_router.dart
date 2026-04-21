@@ -1,9 +1,10 @@
-import 'package:anigoods/features/add_item/screens/addItem_screen.dart';
 import 'package:anigoods/features/auth/screens/privacy_screen.dart';
 import 'package:anigoods/features/auth/screens/terms_screen.dart';
+import 'package:anigoods/features/chat/screens/chat_list_screen.dart';
 import 'package:anigoods/features/chat/screens/chat_room_screen.dart';
 import 'package:anigoods/features/notification/screens/notification_screen.dart';
 import 'package:anigoods/features/profile/screens/become_seller_screen.dart';
+import 'package:anigoods/features/profile/screens/edit_profile_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,6 @@ import 'package:anigoods/features/landing/screens/landing_screen.dart';
 import 'package:anigoods/core/widgets/main_shell.dart';
 import 'package:anigoods/features/item_detail/screens/item_detail_screen.dart';
 import 'package:anigoods/features/profile/screens/setting_screen.dart';
-import 'package:anigoods/features/profile/screens/my_listing_screen.dart';
 import 'package:anigoods/features/order/screens/order_screen.dart';
 import 'package:anigoods/features/order/screens/order_status_screen.dart';
 import 'package:anigoods/features/order/screens/purchase_history_screen.dart';
@@ -28,7 +28,6 @@ import 'dart:async';
 
 // สร้าง Navigator Key เพื่อแยกเลเยอร์ (Root = เต็มจอ, Shell = มีเมนูล่าง)
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
-final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 // Enum for route NAMES
 enum RouteNames {
@@ -43,13 +42,12 @@ enum RouteNames {
   itemDetail,
   editProfile,
   notifications,
-  addItem,
   settings,
-  myListings,
   order,
   orderStatus,
   purchaseHistory,
-  chat,
+  chatroom,
+  chatlist,
   cart,
   terms,
   privacy,
@@ -82,18 +80,16 @@ enum RouteNames {
         return '/edit-profile';
       case RouteNames.notifications:
         return '/notifications';
-      case RouteNames.addItem:
-        return '/add-item';
-      case RouteNames.myListings:
-        return '/my-listings';
       case RouteNames.order:
         return '/orders';
       case RouteNames.orderStatus:
         return '/order-status';
       case RouteNames.purchaseHistory:
         return '/purchase-history';
-      case RouteNames.chat:
-        return '/chat';
+      case RouteNames.chatroom:
+        return '/chatroom';
+      case RouteNames.chatlist:
+        return '/chatlist';
       case RouteNames.cart:
         return '/cart';
       case RouteNames.terms:
@@ -175,12 +171,6 @@ final appRouter = GoRouter(
       builder: (context, state) => const NotificationKeywordsScreen(),
     ),
     GoRoute(
-      path: RouteNames.addItem.path,
-      name: RouteNames.addItem.name,
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const AddItemScreen(),
-    ),
-    GoRoute(
       path: '/item-detail/:itemId', 
       name: RouteNames.itemDetail.name,
       parentNavigatorKey: _rootNavigatorKey,
@@ -190,16 +180,16 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: RouteNames.myListings.path,
-      name: RouteNames.myListings.name,
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const MyListingScreen(),
-    ),
-    GoRoute(
       path: RouteNames.settings.path,
       name: RouteNames.settings.name,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+  path: RouteNames.editProfile.path,
+  name: RouteNames.editProfile.name,
+  parentNavigatorKey: _rootNavigatorKey,
+  builder: (context, state) => const EditProfileScreen(), 
     ),
     GoRoute(
       path: RouteNames.order.path,
@@ -233,12 +223,17 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: RouteNames.chat.path,
-      name: RouteNames.chat.name,
+      path: RouteNames.chatroom.path,
+      name: RouteNames.chatroom.name,
       builder: (context, state) {
         final sellerName = state.extra as String? ?? 'Seller';
         return ChatRoomScreen(sellerName: sellerName);
       },
+    ),
+    GoRoute(
+      path: RouteNames.chatlist.path,
+      name: RouteNames.chatlist.name,
+      builder: (context, state) => const ChatListScreen(),
     ),
     GoRoute(
       path: RouteNames.cart.path,
@@ -261,45 +256,44 @@ final appRouter = GoRouter(
       builder: (context, state) => const BecomeSellerScreen(),
     ),
 
-    //  ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        return MainShell(navigationShell: navigationShell);
-      },
-      branches: [
-        // แท็บที่ 0: Home
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: RouteNames.home.path,
-              name: RouteNames.home.name,
-              pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: HomeScreen()),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: RouteNames.watchlist.path,
-              name: RouteNames.watchlist.name,
-              pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: WatchlistScreen()),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: RouteNames.profile.path,
-              name: RouteNames.profile.name,
-              pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: ProfileScreen()),
-            ),
-          ],
-        ),
-      ],
-    ),
+   // ShellRoute: กลุ่มหน้าจอที่มีเมนูด้านล่าง (Bottom Nav Bar)
+   StatefulShellRoute.indexedStack(
+     builder: (context, state, navigationShell) {
+       return MainShell(navigationShell: navigationShell);
+     },
+     branches: [
+       StatefulShellBranch(
+         routes: [
+           GoRoute(
+             path: RouteNames.home.path,
+             name: RouteNames.home.name,
+             pageBuilder: (context, state) =>
+                 const NoTransitionPage(child: HomeScreen()),
+           ),
+         ],
+       ),
+       StatefulShellBranch(
+         routes: [
+           GoRoute(
+             path: RouteNames.watchlist.path,
+             name: RouteNames.watchlist.name,
+             pageBuilder: (context, state) =>
+                 const NoTransitionPage(child: WatchlistScreen()),
+           ),
+         ],
+       ),
+       StatefulShellBranch(
+         routes: [
+           GoRoute(
+             path: RouteNames.profile.path,
+             name: RouteNames.profile.name,
+             pageBuilder: (context, state) =>
+                 const NoTransitionPage(child: ProfileScreen()),
+           ),
+         ],
+       ),
+     ],
+   ),
   ],
 );
 

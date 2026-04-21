@@ -18,6 +18,7 @@ class ItemModel {
   final String description;
   final List<String> tags;
   final DateTime postedAt;
+  final bool isAvailable;
   final ModerationStatus moderationStatus;
   final int qualityScore;
   final int? reportCount;
@@ -38,6 +39,7 @@ class ItemModel {
     required this.description,
     required this.tags,
     required this.postedAt,
+    this.isAvailable = true,
     required this.moderationStatus,
     required this.qualityScore,
     required this.reportCount,
@@ -62,6 +64,7 @@ class ItemModel {
       tags: List<String>.from(data[ItemFields.tags] ?? []),
       postedAt:
           (data[ItemFields.postedAt] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isAvailable: data['isAvailable'] ?? true,
       moderationStatus: ModerationStatus.values.firstWhere(
         (e) => e.name == (data[ItemFields.moderationStatus] ?? 'pending'),
         orElse: () => ModerationStatus.pending,
@@ -87,6 +90,7 @@ class ItemModel {
     ItemFields.description: description,
     ItemFields.tags: tags,
     ItemFields.postedAt: Timestamp.fromDate(postedAt),
+    'isAvailable': isAvailable,
     ItemFields.moderationStatus: moderationStatus.name,
     ItemFields.qualityScore: qualityScore,
     ItemFields.reportCount: reportCount,
@@ -117,6 +121,7 @@ class ItemModel {
     String? description,
     List<String>? tags,
     DateTime? postedAt,
+    bool? isAvailable,
     ModerationStatus? moderationStatus,
     int? qualityScore,
     int? reportCount,
@@ -137,6 +142,7 @@ class ItemModel {
       description: description ?? this.description,
       tags: tags ?? this.tags,
       postedAt: postedAt ?? this.postedAt,
+      isAvailable: isAvailable ?? this.isAvailable,
       moderationStatus: moderationStatus ?? this.moderationStatus,
       qualityScore: qualityScore ?? this.qualityScore,
       reportCount: reportCount ?? this.reportCount,
