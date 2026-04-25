@@ -14,7 +14,7 @@ import 'package:anigoods/features/report/screens/report_screen.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final String itemId;
-  const ItemDetailScreen({super.key, required this.itemId});
+  const ItemDetailScreen({super.key, required this.itemId}); 
 
   @override
   ConsumerState<ItemDetailScreen> createState() => _ItemDetailScreenState();
@@ -43,12 +43,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           return const Scaffold(body: Center(child: Text('Item not found')));
         }
 
-        return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              _buildHeroImage(item, isFavorite),
-              _buildItemDetails(item),
-            ],
+       return Scaffold(
+          body: SafeArea(
+            bottom: false, 
+            child: CustomScrollView(
+              slivers: [
+                _buildHeroImage(item, isFavorite),
+                _buildItemDetails(item),
+              ],
+            ),
           ),
           bottomNavigationBar: _buildBottomBar(context, item),
         );
