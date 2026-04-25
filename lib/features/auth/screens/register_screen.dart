@@ -5,7 +5,7 @@ import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/services/error_handler.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
-import 'package:anigoods/features/auth/services/auth_service.dart';
+import 'package:anigoods/core/services/auth_service.dart';
 
 // REGISTER SCREEN
 class RegisterScreen extends StatefulWidget {

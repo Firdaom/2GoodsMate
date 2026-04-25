@@ -1,5 +1,5 @@
 import 'package:anigoods/core/router/app_router.dart';
-import 'package:anigoods/features/profile/repositories/user_repository.dart';
+import 'package:anigoods/core/repositories/user_repository.dart';
 import 'package:anigoods/models/order_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';

@@ -2,7 +2,7 @@ import 'package:anigoods/features/home/providers/home_filter_provider.dart';
 import 'package:anigoods/models/item_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import '../repositories/home_repository.dart';
+import '../../../core/repositories/home_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final homeRepositoryProvider = Provider((ref) {

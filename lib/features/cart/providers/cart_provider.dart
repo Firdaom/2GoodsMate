@@ -2,7 +2,7 @@ import 'package:anigoods/core/constants/firebase_constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anigoods/models/item_model.dart';
-import 'package:anigoods/features/cart/repositories/cart_repository.dart'; 
+import 'package:anigoods/core/repositories/cart_repository.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async'; 
 

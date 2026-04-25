@@ -12,7 +12,7 @@ import 'package:anigoods/core/theme/app_theme.dart';
 import 'package:anigoods/core/widgets/common_widgets.dart';
 import 'package:anigoods/core/router/app_router.dart';
 import 'package:anigoods/models/order_model.dart';
-import 'package:anigoods/features/order/services/order_service.dart';
+import 'package:anigoods/core/services/order_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anigoods/features/home/providers/home_provider.dart';
 import 'package:anigoods/features/item_detail/providers/item_detail_provider.dart';
