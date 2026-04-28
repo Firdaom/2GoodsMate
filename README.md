@@ -4,12 +4,12 @@
 
 ---
 
-## 📖 Project Overview
+##  Project Overview
 **2Goods Mate** is a mobile application specifically designed for the collector community (figures, manga, limited edition items, etc.). It solves the problem of scattered second-hand item hunting by bringing everything into one unified platform. This app allows users to seamlessly search, view detailed information, place orders, and communicate directly with sellers through a clean, modern, and user-friendly interface.
 
 ---
 
-## ✨ Key Features
+##  Key Features
 List of fully implemented features:
 
 * 🏠 **Marketplace:** A main feed displaying listed items, complete with categorization and tagging systems.
@@ -21,7 +21,7 @@ List of fully implemented features:
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 * **Frontend:** Flutter
     * *State Management:* Riverpod
     * *Routing:* GoRouter
@@ -32,7 +32,7 @@ List of fully implemented features:
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 Instructions on how to set up and run the project on your local environment.
 
