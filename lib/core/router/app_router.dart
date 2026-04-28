@@ -226,8 +226,14 @@ final appRouter = GoRouter(
       path: RouteNames.chatroom.path,
       name: RouteNames.chatroom.name,
       builder: (context, state) {
-        final sellerName = state.extra as String? ?? 'Seller';
-        return ChatRoomScreen(sellerName: sellerName);
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final sellerId = extra['id'] as String? ?? '';
+        final sellerName = extra['name'] as String? ?? 'Seller';
+
+        return ChatRoomScreen(
+          sellerId: sellerId, 
+          sellerName: sellerName,
+        );
       },
     ),
     GoRoute(

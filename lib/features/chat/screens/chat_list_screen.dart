@@ -1,5 +1,5 @@
 import 'package:anigoods/core/theme/app_theme.dart';
-import 'package:anigoods/core/widgets/common_widgets.dart'; // สมมติว่ามี EmptyState อยู่ในนี้
+import 'package:anigoods/core/widgets/common_widgets.dart'; 
 import 'package:flutter/material.dart';
 
 class ChatListScreen extends StatelessWidget {

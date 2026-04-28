@@ -325,7 +325,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
                   context.pushNamed(
                     RouteNames.chatroom.name,
-                    extra: item.sellerName,
+                    extra: <String, dynamic>{
+                      'id': item.sellerId,
+                      'name': item.sellerName,
+                    }
                   );
                 },
                 style: OutlinedButton.styleFrom(

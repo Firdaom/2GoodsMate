@@ -1,4 +1,4 @@
-# 🎁 2Goods Mate
+# 2Goods Mate
 
 > **Find your anime collectibles** — A centralized marketplace platform for buying and selling second-hand anime merchandise and collectibles for true collectors.
 
@@ -66,4 +66,4 @@ flutter pub get
 ```bash
 flutter run
 ```
-```
+
