@@ -150,8 +150,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: AppTheme.border),
                 ),
-                 child: const TextField(
-                  decoration: InputDecoration(
+                 child: TextField( 
+                  controller: _messageCtrl, 
+                  onSubmitted: (_) => _sendMessage(), 
+                  decoration: const InputDecoration(
                     hintText: 'Type a message...',
                    border: InputBorder.none,
                     enabledBorder: InputBorder.none,
